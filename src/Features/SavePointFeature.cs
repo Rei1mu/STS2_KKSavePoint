@@ -1281,73 +1281,37 @@ public static class SavePointFeature
             
 
             if (isMultiplayer)
-
             {
-
                 Log.Info("[KKSavePoint] Multiplayer rollback: attempting to preserve multiplayer session...");
-
                 
-
                 try
-
                 {
-
                     var runState = RunState.FromSerializable(saveData.SaveData);
-
                     
-
                     RunManager.Instance.CleanUp();
-
                     
-
                     Log.Info("[KKSavePoint] Cleaned up, reloading run state for multiplayer...");
-
                     
-
-                    RunManager.Instance.SetUpSavedSinglePlayer(runState, saveData.SaveData);
-
-                    
-
                     SfxCmd.Play(runState.Players[0].Character.CharacterTransitionSfx);
-
                     TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
-
                     
-
                     Log.Info($"[KKSavePoint] Multiplayer rollback completed. Other players should sync automatically.");
-
                     ShowFeedback(L10n.FeedbackMultiplayerRollbackDone);
-
                 }
-
                 catch (Exception mpEx)
-
                 {
-
                     Log.Error($"[KKSavePoint] Multiplayer rollback failed, falling back to single player: {mpEx}");
-
                     
-
                     RunManager.Instance.CleanUp();
-
                     
-
                     var runState = RunState.FromSerializable(saveData.SaveData);
-
                     RunManager.Instance.SetUpSavedSinglePlayer(runState, saveData.SaveData);
-
                     SfxCmd.Play(runState.Players[0].Character.CharacterTransitionSfx);
-
                     NGame.Instance.ReactionContainer.InitializeNetworking(new NetSingleplayerGameService());
-
                     TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
-
                     
-
                     ShowFeedback(L10n.FeedbackRollbackSinglePlayer);
-
                 }
-
             }
 
             else
