@@ -1,0 +1,1 @@
+        public static string ExportPath => IsChineseLocale() ? "导出路径: 游戏目录" : "Export path: GameFolder";

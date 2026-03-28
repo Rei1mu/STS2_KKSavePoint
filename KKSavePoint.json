@@ -1,0 +1,10 @@
+{
+  "id": "KKSavePoint",
+  "name": "KKSavePoint",
+  "author": "KK",
+  "description": "Mod问题反馈群号:814243169,KKSavePoint/KK存档点,可以回档到任意对局,方便喜欢玩A10的晓美焰复盘是哪步走错了,怎样才能赢下对局,并且可将对局分享给好友,真正做到v我50这把给你玩。SavePoint mod for recording and loading checkpoints.",
+  "version": "v1.0.0",
+  "has_pck": true,
+  "has_dll": true,
+  "affects_gameplay": false
+}

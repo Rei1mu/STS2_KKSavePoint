@@ -1,0 +1,100 @@
+<Project Sdk="Godot.NET.Sdk/4.5.1" InitialTargets="CheckDependencyPaths">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>true</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefaultItemExcludes>packages/**</DefaultItemExcludes>
+    <AppOutputBase>$(MSBuildProjectDirectory)\</AppOutputBase>
+    <PathMap>$(AppOutputBase)=.\</PathMap>
+    <AssemblyName>KKSavePoint</AssemblyName>
+    <RootNamespace>KKSavePoint</RootNamespace>
+  </PropertyGroup>
+
+  <!-- OS Detection -->
+  <PropertyGroup>
+    <IsWindows>false</IsWindows>
+    <IsLinux>false</IsLinux>
+    <IsOSX>false</IsOSX>
+    <IsWindows Condition="$([MSBuild]::IsOSPlatform('Windows'))">true</IsWindows>
+    <IsLinux Condition="$([MSBuild]::IsOSPlatform('Linux'))">true</IsLinux>
+    <IsOSX Condition="$([MSBuild]::IsOSPlatform('OSX'))">true</IsOSX>
+  </PropertyGroup>
+
+  <!-- Windows -->
+  <PropertyGroup Condition="'$(IsWindows)' == 'true'">
+    <AutoSteamPath>$(registry:HKEY_CURRENT_USER\Software\Valve\Steam@SteamPath)\steamapps</AutoSteamPath>
+    <SteamLibraryPath Condition="Exists('$(AutoSteamPath)/common/Slay the Spire 2')">$(AutoSteamPath)</SteamLibraryPath>
+
+    <GodotPath>C:/dev/Godot_v4.5.1-stable_mono_win64/Godot_v4.5.1-stable_mono_win64.exe</GodotPath>
+    <!-- If on Windows and Slay the Spire 2 is not installed in your default steam library, adjust the following.-->
+    <SteamLibraryPath Condition="'$(SteamLibraryPath)' == ''">C:/soft/steam/steamapps</SteamLibraryPath>
+
+    <!-- The below should not need to be changed. -->
+    <Sts2Path>$(SteamLibraryPath)/common/Slay the Spire 2</Sts2Path>
+    <ModsPath>$(Sts2Path)/mods/</ModsPath>
+    <Sts2DataDir>$(Sts2Path)/data_sts2_windows_x86_64</Sts2DataDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Diasble architecture mismatch warning; mods are ideally built for all platforms (MSIL)
+         while your local StS2 version will be for your specific platform. -->
+    <NoWarn>$(NoWarn);MSB3270</NoWarn> 
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(Sts2DataDir)')">
+    <Reference Include="0Harmony">
+        <HintPath>$(Sts2DataDir)/0Harmony.dll</HintPath>
+        <Private>false</Private>
+    </Reference>
+    <Reference Include="sts2">
+        <HintPath>$(Sts2DataDir)/sts2.dll</HintPath>
+        <Private>false</Private>
+        <Publicize>False</Publicize> <!--Allows private/protected field references but may cause errors.-->
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- BaseLib已移除，避免依赖问题 -->
+    <!-- <PackageReference Include="Alchyr.Sts2.BaseLib" Version="*" PrivateAssets="All" /> -->
+    <PackageReference Include="Alchyr.Sts2.ModAnalyzers" Version="*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="decompile/**/*.cs" />
+    <None Include="decompile/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".gitignore" />
+    <None Include="KKSavePoint.json" />
+    <None Include="project.godot" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.3">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
+  <Target Name="CheckDependencyPaths">
+    <Error Text=" Slay the Spire 2 data not found at path '$(Sts2DataDir)'" Condition="'$(Sts2DataDir)' == '' or !Exists('$(Sts2DataDir)')" />
+    <Error Text=" Godot not found at path '$(GodotPath)'" Condition="'$(GodotPath)' == '' or !Exists('$(GodotPath)')" />
+  </Target>
+
+  <Target Name="CopyToModsFolderOnBuild" AfterTargets="PostBuildEvent">
+    <Message Text="Copying .dll and manifest to mods folder." Importance="high" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
+    <Copy SourceFiles="KKSavePoint.json" DestinationFolder="$(ModsPath)$(MSBuildProjectName)/" />
+  </Target>
+
+  <Target Name="GodotPublish" AfterTargets="Publish" Condition="'$(GodotPath)' != '' and Exists('$(GodotPath)') and '$(IsInnerGodotExport)' != 'true'">
+    <Message Text="Exporting Godot .pck to mods folder" Importance="high" />
+    <Exec Command="&quot;$(GodotPath)&quot; --headless --export-pack &quot;BasicExport&quot; &quot;$(ModsPath)$(MSBuildProjectName)/$(MSBuildProjectName).pck&quot;" EnvironmentVariables="IsInnerGodotExport=true;MSBUILDDISABLENODEREUSE=1" ContinueOnError="WarnAndContinue" />
+  </Target>
+
+  <Target Name="GodotPublishSkipped" AfterTargets="Publish" Condition="'$(GodotPath)' == '' or !Exists('$(GodotPath)')">
+    <Message Text="Skipping Godot .pck export because GodotPath is not configured." Importance="high" />
+  </Target>
+</Project>
