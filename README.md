@@ -1,6 +1,6 @@
-# ExampleMod (STS2 Tutorial Mod)
+# KKSavePoint 
 
-`ExampleMod` is a commented, feature-based starter project for Slay the Spire 2 modding.
+`KKSavePoint` SavePoint mod for recording and loading checkpoints.
 
 It includes:
 - Linux/WSL build/install scripts (`bash`)
