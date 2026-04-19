@@ -7,6 +7,8 @@ using System.IO;
 using System.Text.Json;
 
 using System.Threading.Tasks;
+using MegaCrit.Sts2.Core.Multiplayer.Connection;
+using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 
 using Godot;
 
@@ -109,8 +111,8 @@ public static class SavePointFeature
     {
         public static string Title => IsChineseLocale() ? "存档点列表" : "KKSavePoint - Checkpoints";
         public static string NoSavePoints => IsChineseLocale() ? "暂无存档点。" : "No save points recorded yet.";
-        public static string TotalInfo(int count, int max) => IsChineseLocale() 
-            ? $"共 {count} 个存档点 (上限 {max}) " 
+        public static string TotalInfo(int count, int max) => IsChineseLocale()
+            ? $"共 {count} 个存档点 (上限 {max}) "
             : $"Total: {count} checkpoints (max {max}) ";
         public static string ImportFromClipboard => IsChineseLocale() ? "从剪贴板导入" : "Import from Clipboard";
         public static string ClearAll => IsChineseLocale() ? "清空全部" : "Clear All";
@@ -142,31 +144,20 @@ public static class SavePointFeature
     }
 
     public class SavePointRecord
-
     {
-
         public int Index { get; set; }
-
         public string Hash { get; set; } = "";
-
         public string RoomName { get; set; } = "";
-
         public string CharacterName { get; set; } = "";
-
         public string Difficulty { get; set; } = "";
-
         public int Floor { get; set; }
-
         public int Gold { get; set; }
-
         public int CurrentHp { get; set; }
-
         public int MaxHp { get; set; }
-
         public DateTime Timestamp { get; set; }
-
         public string? SaveFileName { get; set; }
-
+        public bool IsMultiplayer { get; set; }
+        public int PlayerCount { get; set; } = 1;
     }
 
 
@@ -588,6 +579,10 @@ public static class SavePointFeature
 
 
 
+        // Check if current game is multiplayer
+        var currentRunState = RunManager.Instance.DebugOnlyGetState();
+        bool isCurrentMultiplayer = currentRunState != null && currentRunState.Players.Count > 1;
+
         int count;
 
         lock (_lock)
@@ -596,17 +591,19 @@ public static class SavePointFeature
 
             count = _savePoints.Count;
 
+            int displayedCount = 0;
+
             if (count == 0)
 
             {
 
                 var noDataLabel = new Label
-                    {
-                        Text = L10n.NoSavePoints,
-                        CustomMinimumSize = new Vector2(0f, 60f),
-                        HorizontalAlignment = HorizontalAlignment.Center
-                    };
-                    listContainer.AddChild(noDataLabel);
+                {
+                    Text = L10n.NoSavePoints,
+                    CustomMinimumSize = new Vector2(0f, 60f),
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                listContainer.AddChild(noDataLabel);
 
             }
 
@@ -620,7 +617,13 @@ public static class SavePointFeature
 
                     var record = _savePoints[i];
 
-                    
+                    // Filter saves based on current mode
+                    if (isCurrentMultiplayer != record.IsMultiplayer)
+                    {
+                        continue;
+                    }
+
+                    displayedCount++;
 
                     var row = new HBoxContainer
 
@@ -642,12 +645,16 @@ public static class SavePointFeature
 
                     var diffText = string.IsNullOrEmpty(record.Difficulty) ? "?" : record.Difficulty;
 
+                    var multiplayerIndicator = record.IsMultiplayer ? "[MP] " : "";
+
                     var itemButton = new Button
                     {
-                        Text = $"[{record.Index}][{hashText}][{charText}][{diffText}][F{record.Floor}] {record.RoomName} | HP {record.CurrentHp}/{record.MaxHp} | Gold {record.Gold} | {record.Timestamp:HH:mm:ss}",
+                        Text = $"[{record.Index}][{hashText}][{charText}][{diffText}][F{record.Floor}] {(record.IsMultiplayer ? $"[MP{record.PlayerCount}] " : "")}{record.RoomName} | HP {record.CurrentHp}/{record.MaxHp} | Gold {record.Gold} | {record.Timestamp:HH:mm:ss}",
                         SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                        TooltipText = $"{L10n.TooltipClickToLoad}.\n{L10n.TooltipCharacter}: {record.CharacterName}\n{L10n.TooltipDifficulty}: {record.Difficulty}\n{L10n.TooltipSavedAt} {record.Timestamp:yyyy-MM-dd HH:mm:ss}"
+                        TooltipText = $"{L10n.TooltipClickToLoad}.\n{L10n.TooltipCharacter}: {record.CharacterName}\n{L10n.TooltipDifficulty}: {record.Difficulty}\n{L10n.TooltipSavedAt} {record.Timestamp:yyyy-MM-dd HH:mm:ss}\nMode: {(record.IsMultiplayer ? $"Multiplayer ({record.PlayerCount} players)" : "Single Player")}"
                     };
+                    // 增大字体大小
+                    itemButton.AddThemeFontSizeOverride("font_size", 16);
 
                     int capturedIndex = i;
 
@@ -710,6 +717,18 @@ public static class SavePointFeature
 
                 }
 
+                // If no saves match current mode
+                if (displayedCount == 0)
+                {
+                    var noDataLabel = new Label
+                    {
+                        Text = isCurrentMultiplayer ? (IsChineseLocale() ? "暂无联机存档点。" : "No multiplayer save points recorded yet.") : L10n.NoSavePoints,
+                        CustomMinimumSize = new Vector2(0f, 60f),
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    };
+                    listContainer.AddChild(noDataLabel);
+                }
+
             }
 
         }
@@ -739,7 +758,7 @@ public static class SavePointFeature
         var importButton = new Button
         {
             Text = L10n.ImportFromClipboard,
-            CustomMinimumSize = new Vector2(150f, 32f),
+            CustomMinimumSize = new Vector2(150f, 40f),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
         };
         importButton.Pressed += () =>
@@ -764,7 +783,7 @@ public static class SavePointFeature
         var clearButton = new Button
         {
             Text = L10n.ClearAll,
-            CustomMinimumSize = new Vector2(80f, 32f),
+            CustomMinimumSize = new Vector2(100f, 40f),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
         };
         clearButton.Pressed += () =>
@@ -779,7 +798,7 @@ public static class SavePointFeature
         var closeButton = new Button
         {
             Text = L10n.Close,
-            CustomMinimumSize = new Vector2(80f, 32f),
+            CustomMinimumSize = new Vector2(100f, 40f),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
         };
         closeButton.Pressed += () =>
@@ -811,6 +830,19 @@ public static class SavePointFeature
 
 
         dialog.PopupCentered(new Vector2I(dialogWidth, dialogHeight));
+
+        // 放大默认按钮
+        var okButton = dialog.GetNodeOrNull<Button>("ButtonContainer/OkButton");
+        if (okButton != null)
+        {
+            okButton.CustomMinimumSize = new Vector2(120f, 50f);
+        }
+        
+        var cancelButton = dialog.GetNodeOrNull<Button>("ButtonContainer/CancelButton");
+        if (cancelButton != null)
+        {
+            cancelButton.CustomMinimumSize = new Vector2(120f, 50f);
+        }
 
     }
 
@@ -884,22 +916,56 @@ public static class SavePointFeature
 
             var sts2Dir = Path.Combine(appDataDir, "SlayTheSpire2");
 
-            
+
 
             if (Directory.Exists(sts2Dir))
 
             {
 
-                var foundFiles = Directory.GetFiles(sts2Dir, "current_run.save", SearchOption.AllDirectories);
+                // 搜索所有可能的存档文件
+                var foundFiles = Directory.GetFiles(sts2Dir, "*.save", SearchOption.AllDirectories);
 
-                if (foundFiles.Length > 0)
-
+                Log.Info($"[KKSavePoint] Found {foundFiles.Length} save files:");
+                foreach (var file in foundFiles)
                 {
-
-                    gameSavePath = foundFiles[0];
-
+                    Log.Info($"[KKSavePoint] - {file}");
                 }
 
+                // 检查是否是多人模式
+                bool isMultiplayerMode = runState.Players.Count > 1;
+
+                // 优先使用对应的存档文件
+                string targetSaveName = isMultiplayerMode ? "current_run_mp.save" : "current_run.save";
+                var targetSaveFiles = foundFiles.Where(f => Path.GetFileName(f).Equals(targetSaveName, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+                if (targetSaveFiles.Length > 0)
+                {
+                    gameSavePath = targetSaveFiles[0];
+                    Log.Info($"[KKSavePoint] Using {targetSaveName}: {gameSavePath}");
+                }
+                // 如果没有找到目标存档文件，尝试另一种模式的存档文件
+                else
+                {
+                    string alternativeSaveName = isMultiplayerMode ? "current_run.save" : "current_run_mp.save";
+                    var alternativeSaveFiles = foundFiles.Where(f => Path.GetFileName(f).Equals(alternativeSaveName, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+                    if (alternativeSaveFiles.Length > 0)
+                    {
+                        gameSavePath = alternativeSaveFiles[0];
+                        Log.Info($"[KKSavePoint] Using alternative {alternativeSaveName}: {gameSavePath}");
+                    }
+                    // 如果都没有，尝试第一个 save 文件
+                    else if (foundFiles.Length > 0)
+                    {
+                        gameSavePath = foundFiles[0];
+                        Log.Info($"[KKSavePoint] No {targetSaveName} or {alternativeSaveName} found, using first save file: {gameSavePath}");
+                    }
+                }
+
+            }
+            else
+            {
+                Log.Info($"[KKSavePoint] SlayTheSpire2 directory not found: {sts2Dir}");
             }
 
 
@@ -921,7 +987,7 @@ public static class SavePointFeature
             var saveFileContent = File.ReadAllText(gameSavePath);
 
             var saveFileHash = saveFileContent.GetHashCode();
-            
+
             // 尝试从存档文件中解析楼层信息
             if (floor == 0)
             {
@@ -941,7 +1007,7 @@ public static class SavePointFeature
                             "act.floor",
                             "act.currentFloor"
                         };
-                        
+
                         foreach (var path in floorPaths)
                         {
                             try
@@ -1028,6 +1094,9 @@ public static class SavePointFeature
 
 
 
+            var isMultiplayer = runState.Players.Count > 1;
+            var playerCount = runState.Players.Count;
+
             var record = new SavePointRecord
 
             {
@@ -1052,7 +1121,11 @@ public static class SavePointFeature
 
                 Timestamp = DateTime.Now,
 
-                SaveFileName = saveFileName
+                SaveFileName = saveFileName,
+
+                IsMultiplayer = isMultiplayer,
+
+                PlayerCount = playerCount
 
             };
 
@@ -1168,7 +1241,7 @@ public static class SavePointFeature
 
         bool isMultiplayer = currentRunState != null && currentRunState.Players.Count > 1;
 
-        
+
 
         if (isMultiplayer)
 
@@ -1178,7 +1251,7 @@ public static class SavePointFeature
 
             var hostPlayer = currentRunState?.Players.FirstOrDefault();
 
-            
+
 
             if (localPlayer == null || hostPlayer == null || localPlayer != hostPlayer)
 
@@ -1192,7 +1265,7 @@ public static class SavePointFeature
 
             }
 
-            
+
 
             Log.Info("[KKSavePoint] Host player confirmed, proceeding with rollback...");
 
@@ -1218,22 +1291,63 @@ public static class SavePointFeature
 
             var sts2Dir = Path.Combine(appDataDir, "SlayTheSpire2");
 
-            
+
 
             if (Directory.Exists(sts2Dir))
 
             {
 
-                var foundFiles = Directory.GetFiles(sts2Dir, "current_run.save", SearchOption.AllDirectories);
+                // 搜索所有可能的存档文件
+                var foundFiles = Directory.GetFiles(sts2Dir, "*.save", SearchOption.AllDirectories);
 
-                if (foundFiles.Length > 0)
-
+                Log.Info($"[KKSavePoint] Found {foundFiles.Length} save files:");
+                foreach (var file in foundFiles)
                 {
-
-                    gameSavePath = foundFiles[0];
-
+                    Log.Info($"[KKSavePoint] - {file}");
                 }
 
+                // 检查是否是多人模式
+                bool isMultiplayerMode = currentRunState != null && currentRunState.Players.Count > 1;
+
+                // 优先使用对应的存档文件
+                string targetSaveName = isMultiplayerMode ? "current_run_mp.save" : "current_run.save";
+                var targetSaveFiles = foundFiles.Where(f => Path.GetFileName(f).Equals(targetSaveName, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+                if (targetSaveFiles.Length > 0)
+                {
+                    gameSavePath = targetSaveFiles[0];
+                    Log.Info($"[KKSavePoint] Using {targetSaveName}: {gameSavePath}");
+                }
+                // 在多人模式下，只使用多人存档文件
+                else if (isMultiplayerMode)
+                {
+                    Log.Error($"[KKSavePoint] No multiplayer save file found: {targetSaveName}");
+                    ShowFeedback("找不到多人存档文件，请确保您在多人模式下创建了存档点。");
+                    return;
+                }
+                // 在单机模式下，尝试另一种模式的存档文件
+                else
+                {
+                    string alternativeSaveName = "current_run_mp.save";
+                    var alternativeSaveFiles = foundFiles.Where(f => Path.GetFileName(f).Equals(alternativeSaveName, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+                    if (alternativeSaveFiles.Length > 0)
+                    {
+                        gameSavePath = alternativeSaveFiles[0];
+                        Log.Info($"[KKSavePoint] Using alternative {alternativeSaveName}: {gameSavePath}");
+                    }
+                    // 如果都没有，尝试第一个 save 文件
+                    else if (foundFiles.Length > 0)
+                    {
+                        gameSavePath = foundFiles[0];
+                        Log.Info($"[KKSavePoint] No {targetSaveName} or {alternativeSaveName} found, using first save file: {gameSavePath}");
+                    }
+                }
+
+            }
+            else
+            {
+                Log.Info($"[KKSavePoint] SlayTheSpire2 directory not found: {sts2Dir}");
             }
 
 
@@ -1244,7 +1358,7 @@ public static class SavePointFeature
 
                 Log.Error($"[KKSavePoint] Cannot find game save path");
 
-                ShowFeedback(L10n.FeedbackFailedToLoad);
+                ShowFeedback("Cannot find game save path");
 
                 return;
 
@@ -1266,58 +1380,71 @@ public static class SavePointFeature
 
                 Log.Error($"[KKSavePoint] Failed to load save data from copied file");
 
-                ShowFeedback(L10n.FeedbackFailedToLoad);
+                ShowFeedback("Failed to load save data from copied file");
 
                 return;
 
             }
 
-
-
-            RunManager.Instance.ActionQueueSet.Reset();
-
-            NRunMusicController.Instance?.StopMusic();
-
-            
-
             if (isMultiplayer)
             {
-                Log.Info("[KKSavePoint] Multiplayer rollback: attempting to preserve multiplayer session...");
-                
+                Log.Info("[KKSavePoint] Multiplayer rollback: starting automated process...");
+
                 try
                 {
-                    var runState = RunState.FromSerializable(saveData.SaveData);
-                    
-                    RunManager.Instance.CleanUp();
-                    
-                    Log.Info("[KKSavePoint] Cleaned up, reloading run state for multiplayer...");
-                    
-                    SfxCmd.Play(runState.Players[0].Character.CharacterTransitionSfx);
-                    TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
-                    
-                    Log.Info($"[KKSavePoint] Multiplayer rollback completed. Other players should sync automatically.");
-                    ShowFeedback(L10n.FeedbackMultiplayerRollbackDone);
+                    // // 清理游戏状态，确保上一局游戏结束
+                    // Log.Info("[KKSavePoint] Cleaning up game state...");
+                    // RunManager.Instance.CleanUp();
+
+                    // // 停止所有游戏音乐
+                    // Log.Info("[KKSavePoint] Stopping game music...");
+                    // NRunMusicController.Instance?.StopMusic();
+
+                    // // 清理当前运行的存档
+                    // Log.Info("[KKSavePoint] Cleaning up current run save...");
+                    // SaveManager.Instance.DeleteCurrentRun();
+
+                    // // 清理所有游戏相关的节点
+                    // Log.Info("[KKSavePoint] Cleaning up game nodes...");
+                    // var gameNodes = NGame.Instance.GetChildren();
+                    // foreach (var node in gameNodes)
+                    // {
+                    //     node.QueueFree();
+                    // }
+
+                    // // 执行垃圾回收
+                    // Log.Info("[KKSavePoint] Running garbage collection...");
+                    // GC.Collect();
+
+                    // // 打开主菜单
+                    // Log.Info("[KKSavePoint] Opening main menu...");
+                    // var mainMenu = NMainMenu.Create(false);
+                    // NGame.Instance.AddChild(mainMenu);
+
+                    // // 打开多人游戏子菜单
+                    // Log.Info("[KKSavePoint] Opening multiplayer submenu...");
+                    // var multiplayerSubmenu = mainMenu.OpenMultiplayerSubmenu();
+
+                    // // 启动主机并加载存档
+                    // Log.Info("[KKSavePoint] Starting host from save...");
+                    // multiplayerSubmenu.StartHost(saveData.SaveData);
+
+                    // Log.Info("[KKSavePoint] Host from save started. Waiting for players to join...");
+                    // ShowFeedback("已自动创建多人房间，客机请点击'加入'并自动准备。");
                 }
-                catch (Exception mpEx)
+                catch (Exception ex)
                 {
-                    Log.Error($"[KKSavePoint] Multiplayer rollback failed, falling back to single player: {mpEx}");
-                    
-                    RunManager.Instance.CleanUp();
-                    
-                    var runState = RunState.FromSerializable(saveData.SaveData);
-                    RunManager.Instance.SetUpSavedSinglePlayer(runState, saveData.SaveData);
-                    SfxCmd.Play(runState.Players[0].Character.CharacterTransitionSfx);
-                    NGame.Instance.ReactionContainer.InitializeNetworking(new NetSingleplayerGameService());
-                    TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
-                    
-                    ShowFeedback(L10n.FeedbackRollbackSinglePlayer);
+                    Log.Error($"[KKSavePoint] Failed to complete automated process: {ex}");
+                    // ShowFeedback("已回到游戏主菜单，请手动加载多人存档并进入房间。");
                 }
             }
 
             else
 
             {
+                RunManager.Instance.ActionQueueSet.Reset();
 
+                NRunMusicController.Instance?.StopMusic();
                 RunManager.Instance.CleanUp();
 
 
@@ -1353,9 +1480,8 @@ public static class SavePointFeature
         {
 
             Log.Error($"[KKSavePoint] Failed to load save point: {ex}");
-
             ShowFeedback(L10n.FeedbackFailedToLoad);
-
+            ShowFeedback($"Failed to load save point: {ex}");
         }
 
         finally
@@ -1556,17 +1682,17 @@ public static class SavePointFeature
                 try { if (player.CurrentFloor > 0) return player.CurrentFloor; } catch { }
                 try { if (player.RoomFloor > 0) return player.RoomFloor; } catch { }
                 try { if (player.ActFloor > 0) return player.ActFloor; } catch { }
-                
+
                 // 尝试从player的Creature获取
-                try 
-                { 
+                try
+                {
                     var creature = player.Creature;
                     if (creature != null)
                     {
                         try { if (creature.Floor > 0) return creature.Floor; } catch { }
                         try { if (creature.CurrentFloor > 0) return creature.CurrentFloor; } catch { }
                     }
-                } 
+                }
                 catch { }
             }
         }
@@ -1578,7 +1704,7 @@ public static class SavePointFeature
     {
         var parts = path.Split('.');
         var current = data;
-        
+
         for (int i = 0; i < parts.Length - 1; i++)
         {
             string key = parts[i];
@@ -1591,13 +1717,13 @@ public static class SavePointFeature
                 throw new KeyNotFoundException();
             }
         }
-        
+
         string lastKey = parts[parts.Length - 1];
         if (current.TryGetValue(lastKey, out var lastValue))
         {
             return lastValue;
         }
-        
+
         throw new KeyNotFoundException();
     }
 
@@ -1613,7 +1739,7 @@ public static class SavePointFeature
 
             Initialize();
 
-            
+
 
             SavePointRecord? record = null;
 
@@ -1674,31 +1800,20 @@ public static class SavePointFeature
                 {
 
                     new Dictionary<string, object?>
-
                     {
-
                         ["index"] = sp.Index,
-
                         ["hash"] = sp.Hash,
-
                         ["roomName"] = sp.RoomName,
-
                         ["characterName"] = sp.CharacterName,
-
                         ["difficulty"] = sp.Difficulty,
-
                         ["floor"] = sp.Floor,
-
                         ["gold"] = sp.Gold,
-
                         ["currentHp"] = sp.CurrentHp,
-
                         ["maxHp"] = sp.MaxHp,
-
                         ["timestamp"] = sp.Timestamp.ToString("O"),
-
+                        ["isMultiplayer"] = sp.IsMultiplayer,
+                        ["playerCount"] = sp.PlayerCount,
                         ["saveData"] = fileContent
-
                     }
 
                 }
@@ -1711,19 +1826,19 @@ public static class SavePointFeature
 
             var compressed = CompressString(json);
 
-            
 
-            var safeCharacterName = string.IsNullOrEmpty(sp.CharacterName) ? "Unknown" : 
+
+            var safeCharacterName = string.IsNullOrEmpty(sp.CharacterName) ? "Unknown" :
 
                 string.Join("", sp.CharacterName.Split(Path.GetInvalidFileNameChars()));
 
-            var safeDifficulty = string.IsNullOrEmpty(sp.Difficulty) ? "Normal" : 
+            var safeDifficulty = string.IsNullOrEmpty(sp.Difficulty) ? "Normal" :
 
                 string.Join("", sp.Difficulty.Split(Path.GetInvalidFileNameChars()));
 
             var fileName = $"{sp.Hash}_{safeCharacterName}_{safeDifficulty}_F{sp.Floor}_savepoint.txt";
 
-            
+
 
             var gameDir = ProjectSettings.GlobalizePath("res://");
 
@@ -1742,7 +1857,7 @@ public static class SavePointFeature
             {
 
                 Directory.CreateDirectory(exportDir);
-                
+
                 // 创建空的说明文件
                 var infoFile = Path.Combine(exportDir, "打开存档复制到剪贴板然后在游戏里面点击从剪贴板导入_Open the save file and copy to clipboard then click import from clipboard in game.txt");
                 if (!File.Exists(infoFile))
@@ -1752,13 +1867,13 @@ public static class SavePointFeature
 
             }
 
-            
+
 
             var exportPath = Path.Combine(exportDir, fileName);
 
             File.WriteAllText(exportPath, compressed);
 
-            
+
 
             try
 
@@ -1786,7 +1901,7 @@ public static class SavePointFeature
 
             }
 
-            
+
 
             Log.Info($"[KKSavePoint] Exported checkpoint to file: {exportPath}");
 
@@ -1818,7 +1933,7 @@ public static class SavePointFeature
 
             Initialize();
 
-            
+
 
             if (!File.Exists(filePath))
 
@@ -1918,38 +2033,29 @@ public static class SavePointFeature
 
                     var savePointPath = Path.Combine(_savePointsDir, saveFileName);
 
-                    
+
 
                     File.WriteAllText(savePointPath, saveDataStr);
 
 
 
+                    var isMultiplayer = spData.TryGetValue("isMultiplayer", out var im) && im.HasValue && im.Value.GetBoolean();
+                    var playerCount = spData.TryGetValue("playerCount", out var pc) && pc.HasValue ? pc.Value.GetInt32() : 1;
                     var record = new SavePointRecord
-
                     {
-
                         Index = GetSavePointCount() + 1,
-
                         Hash = hash,
-
                         RoomName = roomName,
-
                         CharacterName = characterName,
-
                         Difficulty = difficulty,
-
                         Floor = floor,
-
                         Gold = gold,
-
                         CurrentHp = currentHp,
-
                         MaxHp = maxHp,
-
                         Timestamp = timestamp,
-
-                        SaveFileName = saveFileName
-
+                        SaveFileName = saveFileName,
+                        IsMultiplayer = isMultiplayer,
+                        PlayerCount = playerCount
                     };
 
 
@@ -2022,7 +2128,7 @@ public static class SavePointFeature
 
             Initialize();
 
-            
+
 
             SavePointRecord? record = null;
 
@@ -2083,31 +2189,20 @@ public static class SavePointFeature
                 {
 
                     new Dictionary<string, object?>
-
                     {
-
                         ["index"] = sp.Index,
-
                         ["hash"] = sp.Hash,
-
                         ["roomName"] = sp.RoomName,
-
                         ["characterName"] = sp.CharacterName,
-
                         ["difficulty"] = sp.Difficulty,
-
                         ["floor"] = sp.Floor,
-
                         ["gold"] = sp.Gold,
-
                         ["currentHp"] = sp.CurrentHp,
-
                         ["maxHp"] = sp.MaxHp,
-
                         ["timestamp"] = sp.Timestamp.ToString("O"),
-
+                        ["isMultiplayer"] = sp.IsMultiplayer,
+                        ["playerCount"] = sp.PlayerCount,
                         ["saveData"] = fileContent
-
                     }
 
                 }
@@ -2120,7 +2215,7 @@ public static class SavePointFeature
 
             var compressed = CompressString(json);
 
-            
+
 
             DisplayServer.ClipboardSet(compressed);
 
@@ -2150,7 +2245,7 @@ public static class SavePointFeature
 
             Initialize();
 
-            
+
 
             var exportData = new Dictionary<string, object>
 
@@ -2193,31 +2288,20 @@ public static class SavePointFeature
 
 
                     savePointsList.Add(new Dictionary<string, object?>
-
                     {
-
                         ["index"] = sp.Index,
-
                         ["hash"] = sp.Hash,
-
                         ["roomName"] = sp.RoomName,
-
                         ["characterName"] = sp.CharacterName,
-
                         ["difficulty"] = sp.Difficulty,
-
                         ["floor"] = sp.Floor,
-
                         ["gold"] = sp.Gold,
-
                         ["currentHp"] = sp.CurrentHp,
-
                         ["maxHp"] = sp.MaxHp,
-
                         ["timestamp"] = sp.Timestamp.ToString("O"),
-
+                        ["isMultiplayer"] = sp.IsMultiplayer,
+                        ["playerCount"] = sp.PlayerCount,
                         ["saveData"] = fileContent
-
                     });
 
                 }
@@ -2230,7 +2314,7 @@ public static class SavePointFeature
 
             var compressed = CompressString(json);
 
-            
+
 
             DisplayServer.ClipboardSet(compressed);
 
@@ -2260,7 +2344,7 @@ public static class SavePointFeature
 
             Initialize();
 
-            
+
 
             var clipboardText = DisplayServer.ClipboardGet();
 
@@ -2310,7 +2394,7 @@ public static class SavePointFeature
 
             var savePointsList = JsonSerializer.Deserialize<List<Dictionary<string, JsonElement?>>>(savePointsElement.GetRawText(), _jsonOptions);
 
-            
+
 
             if (savePointsList == null) return 0;
 
@@ -2366,38 +2450,29 @@ public static class SavePointFeature
 
                     var savePointPath = Path.Combine(_savePointsDir, saveFileName);
 
-                    
+
 
                     File.WriteAllText(savePointPath, saveDataStr);
 
 
 
+                    var isMultiplayer = spData.TryGetValue("isMultiplayer", out var im) && im.HasValue && im.Value.GetBoolean();
+                    var playerCount = spData.TryGetValue("playerCount", out var pc) && pc.HasValue ? pc.Value.GetInt32() : 1;
                     var record = new SavePointRecord
-
                     {
-
                         Index = GetSavePointCount() + 1,
-
                         Hash = hash,
-
                         RoomName = roomName,
-
                         CharacterName = characterName,
-
                         Difficulty = difficulty,
-
                         Floor = floor,
-
                         Gold = gold,
-
                         CurrentHp = currentHp,
-
                         MaxHp = maxHp,
-
                         Timestamp = timestamp,
-
-                        SaveFileName = saveFileName
-
+                        SaveFileName = saveFileName,
+                        IsMultiplayer = isMultiplayer,
+                        PlayerCount = playerCount
                     };
 
 
@@ -2496,16 +2571,40 @@ public static class SavePointFeature
 
 
 
+    private static readonly Queue<string> _feedbackQueue = new Queue<string>();
+    private static bool _isShowingFeedback = false;
+
     private static void ShowFeedback(string text)
     {
         Log.Info($"[KKSavePoint] SavePoint feedback: {text}");
-        
+
         // 尝试更新状态标签
         if (_statusLabel != null)
         {
             _statusLabel.Text = text;
         }
-        
+
+        // 将反馈添加到队列
+        _feedbackQueue.Enqueue(text);
+
+        // 如果没有正在显示的反馈，开始显示队列中的反馈
+        if (!_isShowingFeedback)
+        {
+            ShowNextFeedback();
+        }
+    }
+
+    private static async void ShowNextFeedback()
+    {
+        if (_feedbackQueue.Count == 0)
+        {
+            _isShowingFeedback = false;
+            return;
+        }
+
+        _isShowingFeedback = true;
+        string text = _feedbackQueue.Dequeue();
+
         // 使用全屏文字特效显示反馈（与原版GambleButtonFeature一致）
         try
         {
@@ -2513,12 +2612,18 @@ public static class SavePointFeature
             if (vfx != null)
             {
                 NGame.Instance?.AddChildSafely(vfx);
+
+                // 等待一段时间后显示下一个反馈
+                await Task.Delay(2000);
             }
         }
         catch (Exception ex)
         {
             Log.Error($"[KKSavePoint] Failed to show feedback vfx: {ex}");
         }
+
+        // 显示下一个反馈
+        ShowNextFeedback();
     }
 
 }
@@ -2561,7 +2666,7 @@ public partial class SavePointDropTarget : Control
 
                 {
 
-                    if (file.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase) || 
+                    if (file.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase) ||
 
                         file.EndsWith(".json", System.StringComparison.OrdinalIgnoreCase))
 
@@ -2597,13 +2702,13 @@ public partial class SavePointDropTarget : Control
 
             {
 
-                var validFiles = files.Where(f => 
+                var validFiles = files.Where(f =>
 
-                    f.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase) || 
+                    f.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase) ||
 
                     f.EndsWith(".json", System.StringComparison.OrdinalIgnoreCase)).ToArray();
 
-                
+
 
                 if (validFiles.Length > 0)
 
@@ -2692,9 +2797,9 @@ public static class SavePointAfterRoomEnteredPatch
                         try { if (map.CurrentFloor > 0) floor = map.CurrentFloor; } catch { }
                         try { if (map.Floor > 0) floor = map.Floor; } catch { }
                         try { if (map.ActFloor > 0) floor = map.ActFloor; } catch { }
-                        
+
                         // 尝试Act相关属性
-                        try 
+                        try
                         {
                             var currentAct = map.CurrentAct;
                             if (currentAct != null)
@@ -2703,25 +2808,25 @@ public static class SavePointAfterRoomEnteredPatch
                                 try { if (currentAct.Floor > 0) floor = currentAct.Floor; } catch { }
                                 try { if (currentAct.ActFloor > 0) floor = currentAct.ActFloor; } catch { }
                             }
-                        } 
+                        }
                         catch { }
-                        
+
                         // 尝试Map的其他可能属性
                         try { if (map.CurrentActFloor > 0) floor = map.CurrentActFloor; } catch { }
                         try { if (map.ActiveFloor > 0) floor = map.ActiveFloor; } catch { }
                     }
                 }
                 catch { }
-                
+
                 // 尝试方法2: RunState直接属性
                 try { if (runStateObj.CurrentFloor > 0) floor = runStateObj.CurrentFloor; } catch { }
                 try { if (runStateObj.Floor > 0) floor = runStateObj.Floor; } catch { }
                 try { if (runStateObj.ActFloor > 0) floor = runStateObj.ActFloor; } catch { }
                 try { if (runStateObj.CurrentActFloor > 0) floor = runStateObj.CurrentActFloor; } catch { }
                 try { if (runStateObj.ActiveFloor > 0) floor = runStateObj.ActiveFloor; } catch { }
-                
+
                 // 尝试方法3: 其他可能的路径
-                try 
+                try
                 {
                     var gameState = runStateObj.GameState;
                     if (gameState != null)
@@ -2729,10 +2834,10 @@ public static class SavePointAfterRoomEnteredPatch
                         try { if (gameState.CurrentFloor > 0) floor = gameState.CurrentFloor; } catch { }
                         try { if (gameState.Floor > 0) floor = gameState.Floor; } catch { }
                     }
-                } 
+                }
                 catch { }
-                
-                try 
+
+                try
                 {
                     var state = runStateObj.State;
                     if (state != null)
@@ -2740,10 +2845,10 @@ public static class SavePointAfterRoomEnteredPatch
                         try { if (state.CurrentFloor > 0) floor = state.CurrentFloor; } catch { }
                         try { if (state.Floor > 0) floor = state.Floor; } catch { }
                     }
-                } 
+                }
                 catch { }
             }
-            
+
             // 尝试从room获取楼层信息
             if (floor == 0 && room != null)
             {
