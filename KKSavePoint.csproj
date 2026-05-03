@@ -62,7 +62,9 @@
 
   <ItemGroup>
     <Compile Remove="decompile/**/*.cs" />
+    <Compile Remove="sts2/**/*.cs" />
     <None Include="decompile/**/*.cs" />
+    <None Include="sts2/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>
