@@ -4899,7 +4899,7 @@ public static class SavePointFeature
             if (!FeatureSettingsStore.Current.EnableSavePoint) return;
 
             if (SavePointFeature._isReplaying)
-            {
+            { 
                 return;
             }
 

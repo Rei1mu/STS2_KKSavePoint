@@ -10,3 +10,4 @@ __pycache__/
 *.log
 # local developer config (never commit)
 /.env
+sts2/
