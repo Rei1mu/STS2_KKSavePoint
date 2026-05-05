@@ -22,6 +22,7 @@ using MegaCrit.Sts2.Core.Helpers;
 using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Multiplayer;
+using MegaCrit.Sts2.Core.Multiplayer.Game;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Audio;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -1551,55 +1552,28 @@ public static partial class SavePointFeature
 
             if (isMultiplayer)
             {
-                Log.Info("[KKSavePoint] Multiplayer rollback: starting automated process...");
+                Log.Info("[KKSavePoint] Multiplayer mode detected, skipping rollback to avoid single-player methods...");
 
-                try
+                if (IsHost())
                 {
-                    // // 清理游戏状态，确保上一局游戏结束
-                    // Log.Info("[KKSavePoint] Cleaning up game state...");
-                    // RunManager.Instance.CleanUp();
-
-                    // // 停止所有游戏音乐
-                    // Log.Info("[KKSavePoint] Stopping game music...");
-                    // NRunMusicController.Instance?.StopMusic();
-
-                    // // 清理当前运行的存档
-                    // Log.Info("[KKSavePoint] Cleaning up current run save...");
-                    // SaveManager.Instance.DeleteCurrentRun();
-
-                    // // 清理所有游戏相关的节点
-                    // Log.Info("[KKSavePoint] Cleaning up game nodes...");
-                    // var gameNodes = NGame.Instance.GetChildren();
-                    // foreach (var node in gameNodes)
-                    // {
-                    //     node.QueueFree();
-                    // }
-
-                    // // 执行垃圾回收
-                    // Log.Info("[KKSavePoint] Running garbage collection...");
-                    // GC.Collect();
-
-                    // // 打开主菜单
-                    // Log.Info("[KKSavePoint] Opening main menu...");
-                    // var mainMenu = NMainMenu.Create(false);
-                    // NGame.Instance.AddChild(mainMenu);
-
-                    // // 打开多人游戏子菜单
-                    // Log.Info("[KKSavePoint] Opening multiplayer submenu...");
-                    // var multiplayerSubmenu = mainMenu.OpenMultiplayerSubmenu();
-
-                    // // 启动主机并加载存档
-                    // Log.Info("[KKSavePoint] Starting host from save...");
-                    // multiplayerSubmenu.StartHost(saveData.SaveData);
-
-                    // Log.Info("[KKSavePoint] Host from save started. Waiting for players to join...");
-                    // ShowFeedback("已自动创建多人房间，客机请点击'加入'并自动准备。");
+                    Log.Info("[KKSavePoint] Host: Re-entering lobby with current run state...");
+                    ShowFeedback("多人模式跳过回档，正在重新进入房间...");
+                    ReEnterLobbyAsHost(saveData.SaveData);
                 }
-                catch (Exception ex)
+                else if (IsClient())
                 {
-                    Log.Error($"[KKSavePoint] Failed to complete automated process: {ex}");
-                    // ShowFeedback("已回到游戏主菜单，请手动加载多人存档并进入房间。");
+                    Log.Info("[KKSavePoint] Client: Returning to menu to rejoin lobby...");
+                    ShowFeedback("多人模式跳过回档，正在重新加入房间...");
+                    ReEnterLobbyAsClient();
                 }
+                else
+                {
+                    Log.Info("[KKSavePoint] Multiplayer but role not detected, returning to menu...");
+                    ShowFeedback("多人模式跳过回档，正在重新加入房间...");
+                    ReturnToMainMenu();
+                }
+                
+                return;
             }
 
             else
