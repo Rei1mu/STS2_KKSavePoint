@@ -86,9 +86,9 @@ public static partial class SavePointFeature
             }
             return;
         }
-        
+
         // 现在在 SetUpCombat 已经清空了，这里不再清空
-        
+
         if (!FeatureSettingsStore.Current.EnableSavePoint)
         {
             Log.Info("[KKSavePoint] SavePoint feature is disabled");
@@ -145,7 +145,7 @@ public static partial class SavePointFeature
 
             Log.Info($"[KKSavePoint] Recording turn save point - Room: {roomName}, Floor: {floor}, Turn: {state.RoundNumber}");
             // 延迟执行，让游戏先保存一次 current_run.save，这样我们能拿到最新的状态
-            _ = Task.Run(async () => 
+            _ = Task.Run(async () =>
             {
                 await Task.Delay(500); // 延迟 500ms
                 Log.Info($"[KKSavePoint] Executing delayed RecordTurnSavePoint for Turn: {state.RoundNumber}");
@@ -157,7 +157,7 @@ public static partial class SavePointFeature
             Log.Info($"[KKSavePoint] Not player turn, skipping - CurrentSide: {state.CurrentSide}");
         }
     }
-    
+
     internal static void OnCombatEnded(CombatRoom room)
     {
         try
@@ -223,7 +223,7 @@ public static partial class SavePointFeature
             var hash = GenerateShortHash(saveFileContent);
             var characterName = GetCharacterName(runState);
             var difficulty = GetDifficulty(runState);
-            
+
             if (floor == 0)
             {
                 floor = GetFloorFromPlayer(localPlayer);
@@ -247,7 +247,7 @@ public static partial class SavePointFeature
                 SaveFileName = saveFileName,
                 IsMultiplayer = isMultiplayer,
                 PlayerCount = playerCount,
-                
+
                 IsTurnSavePoint = true,
                 TurnNumber = turnNumber,
                 CombatRoomName = roomName
@@ -302,17 +302,132 @@ public static class SavePointCombatSetUpPatch
     public static void Postfix(CombatState state)
     {
         if (!FeatureSettingsStore.Current.EnableSavePoint) return;
-        
+
         Log.Info($"[KKSavePoint] SetUpCombat called, _turnRecordLoadCount = {SavePointFeature._turnRecordLoadCount}");
-        
+
         // 新战斗开始时，确保清空旧的回合计录
         if (!SavePointFeature._isLoadingTurnRecordFlag && !SavePointFeature._isReplaying)
         {
             Log.Info($"[KKSavePoint] Clearing turn records in SetUpCombat (new combat)");
             SavePointFeature.ClearTurnRecords();
         }
-        
+
         CombatManager.Instance.TurnStarted += SavePointFeature.OnTurnStarted;
         CombatManager.Instance.CombatEnded += SavePointFeature.OnCombatEnded;
+    }
+
+}
+
+[HarmonyPatch(typeof(Hook), nameof(Hook.AfterTurnEnd))]
+public static class HookAfterTurnEndPatch
+{
+    public static void Postfix(CombatState combatState, CombatSide side)
+    {
+        if (!FeatureSettingsStore.Current.EnableSavePoint) return;
+
+        // 如果正在回放，不保存记录
+        if (SavePointFeature._isReplaying)
+        {
+            Log.Info("[KKSavePoint] Is replaying, skipping turn playback save");
+            return;
+        }
+
+        try
+        {
+            if (side == CombatSide.Player)
+            {
+                var player = LocalContext.GetMe(combatState.RunState);
+                int playerHpAfterTurn = player != null ? (int)player.Creature.CurrentHp : 0;
+                int playerBlockAfterTurn = player != null ? (int)player.Creature.Block : 0;
+
+                var monsterHpAfterTurn = new Dictionary<string, int>();
+                if (combatState.Enemies != null)
+                {
+                    foreach (dynamic enemy in combatState.Enemies)
+                    {
+                        if (enemy != null)
+                        {
+                            try
+                            {
+                                string enemyId = enemy.Id?.ToString() ?? enemy.GetHashCode().ToString();
+                                int hp = (int)(enemy.Creature?.CurrentHp ?? 0);
+                                monsterHpAfterTurn[enemyId] = hp;
+                            }
+                            catch
+                            {
+                                monsterHpAfterTurn[enemy.GetHashCode().ToString()] = 0;
+                            }
+                        }
+                    }
+                }
+
+                var turnData = new SavePointFeature.TurnPlaybackData
+                {
+                    TurnNumber = combatState.RoundNumber,
+                    CardPlays = new List<SavePointFeature.CardPlayRecord>(SavePointFeature._currentTurnCardPlays),
+                    PlayerHpBeforeTurn = SavePointFeature._playerHpBeforeTurn,
+                    PlayerHpAfterTurn = playerHpAfterTurn,
+                    BlockBeforeTurn = SavePointFeature._playerBlockBeforeTurn,
+                    BlockAfterTurn = playerBlockAfterTurn,
+                    MonsterHpBeforeTurn = new Dictionary<string, int>(SavePointFeature._monsterHpBeforeTurn),
+                    MonsterHpAfterTurn = monsterHpAfterTurn,
+                    Gold = player?.Gold ?? 0,
+                    Timestamp = DateTime.Now
+                };
+
+                SavePointFeature._turnPlaybackData.Add(turnData);
+                Log.Info($"[KKSavePoint] Turn saved: Turn {turnData.TurnNumber}, Card plays: {turnData.CardPlays.Count}");
+
+                SavePointFeature._currentTurnCardPlays.Clear();
+                SavePointFeature._currentActionIndex = 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[KKSavePoint] Failed to save turn playback: {ex}");
+        }
+    }
+}
+
+[HarmonyPatch(typeof(Hook), nameof(Hook.AfterPlayerTurnStart))]
+public static class HookAfterPlayerTurnStartPatch
+{
+    public static void Postfix(CombatState combatState, dynamic choiceContext, dynamic player)
+    {
+        if (!FeatureSettingsStore.Current.EnableSavePoint) return;
+
+        try
+        {
+            SavePointFeature._playerHpBeforeTurn = (int)player.Creature.CurrentHp;
+            SavePointFeature._playerBlockBeforeTurn = (int)player.Creature.Block;
+            SavePointFeature._currentActionIndex = 0;
+
+            SavePointFeature._monsterHpBeforeTurn.Clear();
+            if (combatState.Enemies != null)
+            {
+                foreach (dynamic enemy in combatState.Enemies)
+                {
+                    if (enemy != null)
+                    {
+                        try
+                        {
+                            string enemyId = enemy.Id?.ToString() ?? enemy.GetHashCode().ToString();
+                            int hp = (int)(enemy.Creature?.CurrentHp ?? 0);
+                            SavePointFeature._monsterHpBeforeTurn[enemyId] = hp;
+                        }
+                        catch
+                        {
+                            SavePointFeature._monsterHpBeforeTurn[enemy.GetHashCode().ToString()] = 0;
+                        }
+                    }
+                }
+            }
+
+            Log.Info($"[KKSavePoint] Turn start recorded: HP {SavePointFeature._playerHpBeforeTurn}, Block {SavePointFeature._playerBlockBeforeTurn}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[KKSavePoint] Failed to record turn start: {ex}");
+        }
     }
 }

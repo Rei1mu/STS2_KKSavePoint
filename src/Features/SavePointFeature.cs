@@ -54,12 +54,12 @@ public static partial class SavePointFeature
     private static readonly List<SavePointRecord> _turnRecords = new();
     private static readonly object _turnLock = new();
 
-    private static readonly List<CardPlayRecord> _currentTurnCardPlays = new();
-    private static readonly List<TurnPlaybackData> _turnPlaybackData = new();
-    private static int _currentActionIndex = 0;
+    internal static readonly List<CardPlayRecord> _currentTurnCardPlays = new();
+    internal static readonly List<TurnPlaybackData> _turnPlaybackData = new();
+    internal static int _currentActionIndex = 0;
     private static TurnPlaybackData? _pendingReplayData = null;
     private static readonly List<TurnPlaybackData> _turnsToReplay = new();
-    private static int _playerHpBeforeTurn = 0;
+    internal static int _playerHpBeforeTurn = 0;
     internal static bool _isReplaying = false;
     internal static int _turnRecordLoadCount = 0;
     internal static bool _isLoadingTurnRecordFlag = false;
@@ -68,8 +68,8 @@ public static partial class SavePointFeature
     internal static readonly List<TurnPlaybackData> _replayQueue = new();
     internal static int _replayQueueIndex = 0;
     internal static bool _isReplayingAsync = false;
-    private static int _playerBlockBeforeTurn = 0;
-    private static readonly Dictionary<string, int> _monsterHpBeforeTurn = new();
+    internal static int _playerBlockBeforeTurn = 0;
+    internal static readonly Dictionary<string, int> _monsterHpBeforeTurn = new();
     private static string? _pendingSelectedCardId = null;
     private static int? _pendingSelectedCardIndex = null;
     private static CardPlayRecord? _pendingCardSelectionRecord = null;
@@ -236,7 +236,7 @@ public static partial class SavePointFeature
         public static string FeedbackOnlyHostCanRollback => IsChineseLocale() ? "只有房主可以回退" : "Only the host can rollback";
         public static string FeedbackMultiplayerRollbackDone => IsChineseLocale() ? "多人回退完成" : "Multiplayer rollback done";
         public static string FeedbackRollbackSinglePlayer => IsChineseLocale() ? "回退完成(单机模式)" : "Rollback done (single player mode)";
-        
+
         // 回合相关翻译
         public static string TurnSavePointPrefix => IsChineseLocale() ? "回合 " : "Turn ";
         public static string TurnSavePointSuffix => IsChineseLocale() ? " (第{0}层)" : " (Floor {0})";
@@ -365,7 +365,7 @@ public static partial class SavePointFeature
         public string? SaveFileName { get; set; }
         public bool IsMultiplayer { get; set; }
         public int PlayerCount { get; set; } = 1;
-        
+
         // 回合相关字段
         public bool IsTurnSavePoint { get; set; }
         public int TurnNumber { get; set; }
@@ -684,12 +684,12 @@ public static partial class SavePointFeature
             Title = L10n.Title,
             Exclusive = false
         };
-        
+
         var screenSize = DisplayServer.ScreenGetSize();
         var windowWidth = (int)(screenSize.X * 0.5f);
         var windowHeight = (int)(screenSize.Y * 0.6f);
         window.Size = new Vector2I(windowWidth, windowHeight);
-        
+
         var dropTarget = new SavePointDropTarget
         {
             Name = "DropTarget",
@@ -720,7 +720,7 @@ public static partial class SavePointFeature
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
         content.AddThemeConstantOverride("separation", 8);
-        
+
         var scrollContainer = new ScrollContainer
         {
             CustomMinimumSize = new Vector2(windowWidth - 80f, windowHeight - 150f),
@@ -806,10 +806,10 @@ public static partial class SavePointFeature
                     var charText = string.IsNullOrEmpty(record.CharacterName) ? "?" : record.CharacterName;
                     var diffText = string.IsNullOrEmpty(record.Difficulty) ? "?" : record.Difficulty;
                     var multiplayerIndicator = record.IsMultiplayer ? "[MP] " : "";
-                    
+
                     string buttonText;
                     string tooltipText;
-                    
+
                     if (record.IsTurnSavePoint)
                     {
                         string suffix = string.Format(L10n.TurnSavePointSuffix, record.Floor);
@@ -830,7 +830,7 @@ public static partial class SavePointFeature
                     };
                     // 增大字体大小
                     itemButton.AddThemeFontSizeOverride("font_size", 16);
-                    
+
                     if (record.IsTurnSavePoint)
                     {
                         itemButton.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.2f));
@@ -987,58 +987,58 @@ public static partial class SavePointFeature
         buttonRow.AddChild(clearButton);
 
         var closeButton = new Button
-                {
-                    Text = L10n.Close,
-                    CustomMinimumSize = new Vector2(100f, 40f),
-                    SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
-                };
-                closeButton.Pressed += () =>
-                {
-                    window.Hide();
-                    window.QueueFree();
-                };
-                buttonRow.AddChild(closeButton);
-                
-                var openLogButton = new Button
-                {
-                    Text = "Open Log",
-                    CustomMinimumSize = new Vector2(100f, 40f),
-                    SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
-                    TooltipText = "Open log directory"
-                };
-                openLogButton.Pressed += () =>
-                {
-                    var appDataPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
-                    var gameLogsPath = Path.Combine(appDataPath, "SlayTheSpire2", "logs");
-                    if (Directory.Exists(gameLogsPath))
-                    {
-                        System.Diagnostics.Process.Start("explorer.exe", gameLogsPath);
-                    }
-                    else
-                    {
-                        System.Diagnostics.Process.Start("explorer.exe", appDataPath);
-                    }
-                };
-                buttonRow.AddChild(openLogButton);
-                
-                var turnHistoryButton = new Button
-                {
-                    Text = IsChineseLocale() ? "回合记录" : "Turn History",
-                    CustomMinimumSize = new Vector2(100f, 40f),
-                    SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
-                    TooltipText = IsChineseLocale() ? "查看回合记录并悔棋" : "View turn records and rollback"
-                };
-                turnHistoryButton.Pressed += () =>
-                {
-                    window.Hide();
-                    window.QueueFree();
-                    ShowTurnHistoryDialog();
-                };
-                buttonRow.AddChild(turnHistoryButton);
-                
-                content.AddChild(buttonRow);
+        {
+            Text = L10n.Close,
+            CustomMinimumSize = new Vector2(100f, 40f),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
+        };
+        closeButton.Pressed += () =>
+        {
+            window.Hide();
+            window.QueueFree();
+        };
+        buttonRow.AddChild(closeButton);
 
-                _statusLabel = new Label
+        var openLogButton = new Button
+        {
+            Text = "Open Log",
+            CustomMinimumSize = new Vector2(100f, 40f),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+            TooltipText = "Open log directory"
+        };
+        openLogButton.Pressed += () =>
+        {
+            var appDataPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
+            var gameLogsPath = Path.Combine(appDataPath, "SlayTheSpire2", "logs");
+            if (Directory.Exists(gameLogsPath))
+            {
+                System.Diagnostics.Process.Start("explorer.exe", gameLogsPath);
+            }
+            else
+            {
+                System.Diagnostics.Process.Start("explorer.exe", appDataPath);
+            }
+        };
+        buttonRow.AddChild(openLogButton);
+
+        var turnHistoryButton = new Button
+        {
+            Text = IsChineseLocale() ? "回合记录" : "Turn History",
+            CustomMinimumSize = new Vector2(100f, 40f),
+            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
+            TooltipText = IsChineseLocale() ? "查看回合记录并悔棋" : "View turn records and rollback"
+        };
+        turnHistoryButton.Pressed += () =>
+        {
+            window.Hide();
+            window.QueueFree();
+            ShowTurnHistoryDialog();
+        };
+        buttonRow.AddChild(turnHistoryButton);
+
+        content.AddChild(buttonRow);
+
+        _statusLabel = new Label
         {
             Text = L10n.ExportPath,
             CustomMinimumSize = new Vector2(0f, 24f),
@@ -1050,19 +1050,19 @@ public static partial class SavePointFeature
 
 
         dropTarget.AddChild(content);
-        
+
         window.AddChild(dropTarget);
-        
+
         window.CloseRequested += () =>
         {
             window.Hide();
             window.QueueFree();
         };
-        
+
         gameRoot.AddChild(window);
-        
+
         window.PopupCentered();
-        
+
         // 添加键盘事件处理ESC键关闭
         dropTarget._Window = window; // 传递window引用用于ESC键处理
 
@@ -1137,22 +1137,22 @@ public static partial class SavePointFeature
             // 获取游戏存档路径
             bool isMultiplayerMode = runState != null && runState.Players.Count > 1;
             string? runSaveManagerPath = null;
-            
+
             try
             {
                 var saveManagerType = Type.GetType("MegaCrit.Sts2.Core.Saves.SaveManager, sts2");
                 var runSaveManagerType = Type.GetType("MegaCrit.Sts2.Core.Saves.Managers.RunSaveManager, sts2");
-                
+
                 if (saveManagerType != null && runSaveManagerType != null)
                 {
                     var instanceProp = saveManagerType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
                     var saveManagerInstance = instanceProp?.GetValue(null);
-                    
+
                     if (saveManagerInstance != null)
                     {
                         var runSaveManagerField = saveManagerType.GetField("_runSaveManager", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         var runSaveManager = runSaveManagerField?.GetValue(saveManagerInstance);
-                        
+
                         if (runSaveManager != null)
                         {
                             if (isMultiplayerMode)
@@ -1175,7 +1175,7 @@ public static partial class SavePointFeature
             {
                 Log.Error($"[KKSavePoint] Failed to get save path from RunSaveManager: {ex}");
             }
-            
+
             // 使用GetGameSavePath获取路径
             gameSavePath = GetGameSavePath(isMultiplayerMode);
             if (string.IsNullOrEmpty(gameSavePath))
@@ -2740,7 +2740,7 @@ public static partial class SavePointFeature
     private static void ShowFeedback(string text)
     {
         Log.Info($"[KKSavePoint] SavePoint feedback: {text}");
-        
+
         try
         {
             if (_statusLabel != null && !_statusLabel.IsQueuedForDeletion())
@@ -2755,9 +2755,9 @@ public static partial class SavePointFeature
         catch (Exception)
         {
         }
-        
+
         _feedbackQueue.Enqueue(text);
-        
+
         if (!_isShowingFeedback)
         {
             ShowNextFeedback();
@@ -2799,7 +2799,7 @@ public static partial class SavePointFeature
         try
         {
             Initialize();
-            
+
             Log.Info($"[KKSavePoint] ShowTurnHistoryDialog called - Turn records count: {_turnRecords.Count}");
 
             Node? gameRoot = NGame.Instance;
@@ -2810,157 +2810,157 @@ public static partial class SavePointFeature
                 return;
             }
 
-        var existing = gameRoot.FindChild("TurnHistoryDialog", recursive: true, owned: false);
-        if (existing != null)
-        {
-            existing.QueueFree();
-        }
-
-        var window = new Window
-        {
-            Name = "TurnHistoryDialog",
-            Title = IsChineseLocale() ? "回合记录" : "Turn History",
-            Exclusive = false
-        };
-
-        // 处理窗口关闭按钮 (X)
-        window.CloseRequested += () =>
-        {
-            window.Hide();
-            window.QueueFree();
-        };
-
-        var screenSize = DisplayServer.ScreenGetSize();
-        var windowWidth = (int)(screenSize.X * 0.4f);
-        var windowHeight = (int)(screenSize.Y * 0.5f);
-        window.Size = new Vector2I(windowWidth, windowHeight);
-
-        var content = new VBoxContainer
-        {
-            CustomMinimumSize = new Vector2(windowWidth - 40f, 0f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
-        content.AddThemeConstantOverride("separation", 8);
-
-        var titleLabel = new Label
-        {
-            Text = IsChineseLocale() ? "点击回合记录悔棋到该回合" : "Click turn record to rollback to that turn",
-            CustomMinimumSize = new Vector2(0f, 30f),
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
-        titleLabel.AddThemeFontSizeOverride("font_size", 18);
-        content.AddChild(titleLabel);
-
-        var scrollContainer = new ScrollContainer
-        {
-            CustomMinimumSize = new Vector2(windowWidth - 60f, windowHeight - 120f),
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            SizeFlagsVertical = Control.SizeFlags.ExpandFill
-        };
-
-        var listContainer = new VBoxContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-        };
-        listContainer.AddThemeConstantOverride("separation", 4);
-
-        lock (_turnLock)
-        {
-            Log.Info($"[KKSavePoint] Turn records in lock: {_turnRecords.Count}");
-            
-            if (_turnRecords.Count == 0)
+            var existing = gameRoot.FindChild("TurnHistoryDialog", recursive: true, owned: false);
+            if (existing != null)
             {
-                var noDataLabel = new Label
-                {
-                    Text = IsChineseLocale() ? "暂无回合记录" : "No turn records yet",
-                    CustomMinimumSize = new Vector2(0f, 60f),
-                    HorizontalAlignment = HorizontalAlignment.Center
-                };
-                listContainer.AddChild(noDataLabel);
+                existing.QueueFree();
             }
-            else
+
+            var window = new Window
             {
-                // 按回合数排序显示
-                var sortedRecords = _turnRecords.OrderBy(sp => sp.TurnNumber).ToList();
-                Log.Info($"[KKSavePoint] Displaying {sortedRecords.Count} turn records");
-                
-                for (int i = 0; i < sortedRecords.Count; i++)
+                Name = "TurnHistoryDialog",
+                Title = IsChineseLocale() ? "回合记录" : "Turn History",
+                Exclusive = false
+            };
+
+            // 处理窗口关闭按钮 (X)
+            window.CloseRequested += () =>
+            {
+                window.Hide();
+                window.QueueFree();
+            };
+
+            var screenSize = DisplayServer.ScreenGetSize();
+            var windowWidth = (int)(screenSize.X * 0.4f);
+            var windowHeight = (int)(screenSize.Y * 0.5f);
+            window.Size = new Vector2I(windowWidth, windowHeight);
+
+            var content = new VBoxContainer
+            {
+                CustomMinimumSize = new Vector2(windowWidth - 40f, 0f),
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
+            content.AddThemeConstantOverride("separation", 8);
+
+            var titleLabel = new Label
+            {
+                Text = IsChineseLocale() ? "点击回合记录悔棋到该回合" : "Click turn record to rollback to that turn",
+                CustomMinimumSize = new Vector2(0f, 30f),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            titleLabel.AddThemeFontSizeOverride("font_size", 18);
+            content.AddChild(titleLabel);
+
+            var scrollContainer = new ScrollContainer
+            {
+                CustomMinimumSize = new Vector2(windowWidth - 60f, windowHeight - 120f),
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                SizeFlagsVertical = Control.SizeFlags.ExpandFill
+            };
+
+            var listContainer = new VBoxContainer
+            {
+                SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+            };
+            listContainer.AddThemeConstantOverride("separation", 4);
+
+            lock (_turnLock)
+            {
+                Log.Info($"[KKSavePoint] Turn records in lock: {_turnRecords.Count}");
+
+                if (_turnRecords.Count == 0)
                 {
-                    var record = sortedRecords[i];
-                    var row = new HBoxContainer
+                    var noDataLabel = new Label
                     {
-                        CustomMinimumSize = new Vector2(0f, 50f),
-                        SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+                        Text = IsChineseLocale() ? "暂无回合记录" : "No turn records yet",
+                        CustomMinimumSize = new Vector2(0f, 60f),
+                        HorizontalAlignment = HorizontalAlignment.Center
                     };
-                    row.AddThemeConstantOverride("separation", 4);
+                    listContainer.AddChild(noDataLabel);
+                }
+                else
+                {
+                    // 按回合数排序显示
+                    var sortedRecords = _turnRecords.OrderBy(sp => sp.TurnNumber).ToList();
+                    Log.Info($"[KKSavePoint] Displaying {sortedRecords.Count} turn records");
 
-                    string suffix = string.Format(L10n.TurnSavePointSuffix, record.Floor);
-                    string buttonText = $"{L10n.TurnSavePointPrefix}{record.TurnNumber}{suffix} | HP {record.CurrentHp}/{record.MaxHp} | {record.Timestamp:HH:mm:ss}";
-
-                    var turnButton = new Button
+                    for (int i = 0; i < sortedRecords.Count; i++)
                     {
-                        Text = buttonText,
-                        SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                        CustomMinimumSize = new Vector2(0f, 50f)
-                    };
-                    turnButton.AddThemeFontSizeOverride("font_size", 16);
-                    turnButton.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.2f));
+                        var record = sortedRecords[i];
+                        var row = new HBoxContainer
+                        {
+                            CustomMinimumSize = new Vector2(0f, 50f),
+                            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+                        };
+                        row.AddThemeConstantOverride("separation", 4);
 
-                    int targetTurn = record.TurnNumber;
-                    turnButton.Pressed += () =>
-                    {
-                        Log.Info($"[KKSavePoint] Turn button pressed for turn {targetTurn}");
-                        window.Hide();
-                        window.QueueFree();
-                        LoadTurnRecord(targetTurn);
-                    };
+                        string suffix = string.Format(L10n.TurnSavePointSuffix, record.Floor);
+                        string buttonText = $"{L10n.TurnSavePointPrefix}{record.TurnNumber}{suffix} | HP {record.CurrentHp}/{record.MaxHp} | {record.Timestamp:HH:mm:ss}";
 
-                    row.AddChild(turnButton);
+                        var turnButton = new Button
+                        {
+                            Text = buttonText,
+                            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                            CustomMinimumSize = new Vector2(0f, 50f)
+                        };
+                        turnButton.AddThemeFontSizeOverride("font_size", 16);
+                        turnButton.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.2f));
 
-                    var rollbackButton = new Button
-                    {
-                        Text = IsChineseLocale() ? "悔棋" : "Rollback",
-                        CustomMinimumSize = new Vector2(80f, 50f),
-                        TooltipText = IsChineseLocale() ? $"悔棋到 回合{record.TurnNumber}" : $"Rollback to Turn {record.TurnNumber}"
-                    };
-                    rollbackButton.AddThemeFontSizeOverride("font_size", 16);
+                        int targetTurn = record.TurnNumber;
+                        turnButton.Pressed += () =>
+                        {
+                            Log.Info($"[KKSavePoint] Turn button pressed for turn {targetTurn}");
+                            window.Hide();
+                            window.QueueFree();
+                            LoadTurnRecord(targetTurn);
+                        };
 
-                    int rollbackTurn = record.TurnNumber;
-                    rollbackButton.Pressed += () =>
-                    {
-                        Log.Info($"[KKSavePoint] Rollback button pressed for turn {rollbackTurn}");
-                        window.Hide();
-                        window.QueueFree();
-                        LoadTurnRecord(rollbackTurn);
-                    };
+                        row.AddChild(turnButton);
 
-                    row.AddChild(rollbackButton);
-                    listContainer.AddChild(row);
+                        var rollbackButton = new Button
+                        {
+                            Text = IsChineseLocale() ? "悔棋" : "Rollback",
+                            CustomMinimumSize = new Vector2(80f, 50f),
+                            TooltipText = IsChineseLocale() ? $"悔棋到 回合{record.TurnNumber}" : $"Rollback to Turn {record.TurnNumber}"
+                        };
+                        rollbackButton.AddThemeFontSizeOverride("font_size", 16);
+
+                        int rollbackTurn = record.TurnNumber;
+                        rollbackButton.Pressed += () =>
+                        {
+                            Log.Info($"[KKSavePoint] Rollback button pressed for turn {rollbackTurn}");
+                            window.Hide();
+                            window.QueueFree();
+                            LoadTurnRecord(rollbackTurn);
+                        };
+
+                        row.AddChild(rollbackButton);
+                        listContainer.AddChild(row);
+                    }
                 }
             }
-        }
 
-        scrollContainer.AddChild(listContainer);
-        content.AddChild(scrollContainer);
+            scrollContainer.AddChild(listContainer);
+            content.AddChild(scrollContainer);
 
-        var closeButton = new Button
-        {
-            Text = IsChineseLocale() ? "关闭" : "Close",
-            CustomMinimumSize = new Vector2(100f, 40f),
-            SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
-        };
-        closeButton.Pressed += () =>
-        {
-            window.Hide();
-            window.QueueFree();
-        };
-        content.AddChild(closeButton);
+            var closeButton = new Button
+            {
+                Text = IsChineseLocale() ? "关闭" : "Close",
+                CustomMinimumSize = new Vector2(100f, 40f),
+                SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
+            };
+            closeButton.Pressed += () =>
+            {
+                window.Hide();
+                window.QueueFree();
+            };
+            content.AddChild(closeButton);
 
-        window.AddChild(content);
-        gameRoot.AddChild(window);
-        window.PopupCentered();
-        
-        Log.Info("[KKSavePoint] TurnHistoryDialog shown successfully");
+            window.AddChild(content);
+            gameRoot.AddChild(window);
+            window.PopupCentered();
+
+            Log.Info("[KKSavePoint] TurnHistoryDialog shown successfully");
         }
         catch (Exception ex)
         {
@@ -3311,9 +3311,9 @@ public static partial class SavePointFeature
                         var endTurnActionType = Type.GetType("MegaCrit.Sts2.Core.GameActions.EndPlayerTurnAction, sts2");
                         if (endTurnActionType != null)
                         {
-                            var constructor = endTurnActionType.GetConstructor(new Type[] { 
-                                typeof(MegaCrit.Sts2.Core.Entities.Players.Player), 
-                                typeof(int) 
+                            var constructor = endTurnActionType.GetConstructor(new Type[] {
+                                typeof(MegaCrit.Sts2.Core.Entities.Players.Player),
+                                typeof(int)
                             });
                             if (constructor != null)
                             {
@@ -3393,7 +3393,7 @@ public static partial class SavePointFeature
                     {
                         cardIdStr = card.Id?.ToString();
                     }
-                    
+
                     if (cardIdStr == record.CardId)
                     {
                         cardToPlay = card;
@@ -3403,7 +3403,7 @@ public static partial class SavePointFeature
                 }
                 currentIndex++;
             }
-            
+
             if (cardToPlay == null)
             {
                 Log.Warn($"[KKSavePoint] Card {record.CardName} not found in hand, skipping");
@@ -3441,12 +3441,12 @@ public static partial class SavePointFeature
                         _currentReplaySelectorScope = null;
                     }
                     _currentReplaySelector = null;
-                    
+
                     // 创建新的 selector
                     var replaySelector = new ReplayCardSelector(record.SelectedCardId, record.SelectedCardIndex);
                     _currentReplaySelector = replaySelector;
                     Log.Info($"[KKSavePoint] Created replay selector set directly: {record.SelectedCardId}, {record.SelectedCardIndex}");
-                    
+
                     // 也尝试使用 PushSelector 作为备用
                     try
                     {
@@ -3499,7 +3499,7 @@ public static partial class SavePointFeature
                     }
                 }
             }
-            
+
             if (target == null && record.TargetIds != null && record.TargetIds.Count > 0)
             {
                 try
@@ -3521,7 +3521,7 @@ public static partial class SavePointFeature
                                 }
                             }
                             catch { }
-                            
+
                             if (creatureModelIdStr != null && creatureModelIdStr.Contains(targetIdStr))
                             {
                                 target = creature;
@@ -3535,7 +3535,7 @@ public static partial class SavePointFeature
                     Log.Warn($"[KKSavePoint] Failed to get target by model id: {ex.Message}");
                 }
             }
-            
+
             Log.Info($"[KKSavePoint] Target: {(target != null ? target.LogName?.ToString() : "null")}");
 
             // 暂时先不处理选牌回放，先确保基本回放功能正常
@@ -3563,23 +3563,23 @@ public static partial class SavePointFeature
                 // 尝试获取 PlayCardAction 类型
                 var playCardActionType = Type.GetType("MegaCrit.Sts2.Core.GameActions.PlayCardAction, sts2");
                 Log.Info($"[KKSavePoint] PlayCardAction type: {playCardActionType?.FullName ?? "null"}");
-                
+
                 if (playCardActionType != null)
                 {
                     // 尝试不同的构造函数签名
                     var constructor = playCardActionType.GetConstructor(new Type[] { typeof(object), typeof(object) });
                     Log.Info($"[KKSavePoint] Constructor (object, object): {constructor != null}");
-                    
+
                     if (constructor == null)
                     {
                         // 尝试实际类型
-                        constructor = playCardActionType.GetConstructor(new Type[] { 
-                            typeof(MegaCrit.Sts2.Core.Models.CardModel), 
-                            typeof(MegaCrit.Sts2.Core.Entities.Creatures.Creature) 
+                        constructor = playCardActionType.GetConstructor(new Type[] {
+                            typeof(MegaCrit.Sts2.Core.Models.CardModel),
+                            typeof(MegaCrit.Sts2.Core.Entities.Creatures.Creature)
                         });
                         Log.Info($"[KKSavePoint] Constructor (CardModel, Creature): {constructor != null}");
                     }
-                    
+
                     if (constructor != null)
                     {
                         try
@@ -3662,7 +3662,7 @@ public static partial class SavePointFeature
                 _currentReplaySelectorScope = null;
             }
             _currentReplaySelector = null;
-            
+
             SubmitEndTurnAction(turnData.TurnNumber);
             _replayQueueIndex++;
             if (_replayQueueIndex >= _replayQueue.Count)
@@ -3699,36 +3699,36 @@ public static partial class SavePointFeature
         {
             // 尝试使用反射执行卡牌效果
             Type cardType = card.GetType();
-            
+
             // 尝试找 OnPlay 方法（protected async Task OnPlay(PlayerChoiceContext, CardPlay)）
-            var playMethod = cardType.GetMethod("OnPlay", 
-                System.Reflection.BindingFlags.Instance | 
-                System.Reflection.BindingFlags.NonPublic | 
+            var playMethod = cardType.GetMethod("OnPlay",
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic |
                 System.Reflection.BindingFlags.Public);
-            
+
             if (playMethod == null)
             {
                 // 尝试找 Play 方法
-                playMethod = cardType.GetMethod("Play", 
-                    System.Reflection.BindingFlags.Instance | 
+                playMethod = cardType.GetMethod("Play",
+                    System.Reflection.BindingFlags.Instance |
                     System.Reflection.BindingFlags.Public);
             }
-            
+
             if (playMethod != null)
             {
                 Log.Info($"[KKSavePoint] Found method: {playMethod.Name} for card type: {cardType.Name}");
-                
+
                 // 获取参数类型
                 var parameters = playMethod.GetParameters();
                 Log.Info($"[KKSavePoint] Method has {parameters.Length} parameters");
-                
+
                 // 创建参数
                 object[] args = new object[parameters.Length];
                 for (int i = 0; i < parameters.Length; i++)
                 {
                     Type paramType = parameters[i].ParameterType;
                     Log.Info($"[KKSavePoint] Parameter {i}: {paramType.FullName}");
-                    
+
                     // 根据参数类型尝试创建合适的对象
                     if (paramType.FullName?.Contains("PlayerChoiceContext") == true)
                     {
@@ -3765,7 +3765,7 @@ public static partial class SavePointFeature
                         }
                     }
                 }
-                
+
                 // 执行方法
                 try
                 {
@@ -3776,7 +3776,7 @@ public static partial class SavePointFeature
                         task.Wait(TimeSpan.FromSeconds(5)); // 等待最多5秒
                         Log.Info($"[KKSavePoint] Card effect task completed");
                     }
-                    
+
                     Log.Info($"[KKSavePoint] Card effect executed successfully");
                 }
                 catch (Exception ex)
@@ -3801,7 +3801,7 @@ public static partial class SavePointFeature
         try
         {
             Initialize();
-            
+
             SavePointRecord? record;
             lock (_lock)
             {
@@ -3812,35 +3812,35 @@ public static partial class SavePointFeature
                 }
                 record = _savePoints[savePointIndex];
             }
-            
+
             if (string.IsNullOrEmpty(record?.SaveFileName))
             {
                 ShowFeedback(L10n.FeedbackNoSaveData);
                 return;
             }
-            
+
             var savePointPath = Path.Combine(_savePointsDir, record.SaveFileName);
             if (!File.Exists(savePointPath))
             {
                 ShowFeedback(L10n.FeedbackFileNotFound);
                 return;
             }
-            
+
             // 读取存档内容
             var saveContent = File.ReadAllText(savePointPath);
-            
+
             // 创建新窗口
             var window = new Window
             {
                 Title = L10n.DeckTitle,
                 Exclusive = false
             };
-            
+
             var screenSize = DisplayServer.ScreenGetSize();
             var windowWidth = (int)(screenSize.X * 0.5f);
             var windowHeight = (int)(screenSize.Y * 0.6f);
             window.Size = new Vector2I(windowWidth, windowHeight);
-            
+
             var content = new VBoxContainer
             {
                 CustomMinimumSize = new Vector2(windowWidth - 40f, windowHeight - 40f),
@@ -3848,27 +3848,27 @@ public static partial class SavePointFeature
                 SizeFlagsVertical = Control.SizeFlags.ExpandFill
             };
             content.AddThemeConstantOverride("separation", 8);
-            
+
             var scrollContainer = new ScrollContainer
             {
                 CustomMinimumSize = new Vector2(windowWidth - 40f, windowHeight - 100f),
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 SizeFlagsVertical = Control.SizeFlags.ExpandFill
             };
-            
+
             var listContainer = new VBoxContainer
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
             listContainer.AddThemeConstantOverride("separation", 4);
-            
+
             // 尝试解析存档并显示卡牌
             bool isSinglePlayer = !record.IsMultiplayer;
             PopulateCardList(listContainer, saveContent, isSinglePlayer, savePointIndex, window);
-            
+
             scrollContainer.AddChild(listContainer);
             content.AddChild(scrollContainer);
-            
+
             // 添加关闭按钮
             var buttonRow = new HBoxContainer
             {
@@ -3876,7 +3876,7 @@ public static partial class SavePointFeature
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
             };
             buttonRow.AddThemeConstantOverride("separation", 8);
-            
+
             var closeButton = new Button
             {
                 Text = L10n.Close,
@@ -3889,7 +3889,7 @@ public static partial class SavePointFeature
                 window.QueueFree();
             };
             buttonRow.AddChild(closeButton);
-            
+
             var openLogButton = new Button
             {
                 Text = "Open Log",
@@ -3911,16 +3911,16 @@ public static partial class SavePointFeature
                 }
             };
             buttonRow.AddChild(openLogButton);
-            
+
             content.AddChild(buttonRow);
-            
+
             window.AddChild(content);
             window.CloseRequested += () =>
             {
                 window.Hide();
                 window.QueueFree();
             };
-            
+
             var gameRoot = NGame.Instance;
             if (gameRoot != null)
             {
@@ -3953,23 +3953,23 @@ public static partial class SavePointFeature
             {
                 jsonContent = saveContent;
             }
-            
+
             // 打印JSON内容的前500个字符用于调试
             if (!string.IsNullOrEmpty(jsonContent))
             {
                 var preview = jsonContent.Length > 500 ? jsonContent.Substring(0, 500) + "..." : jsonContent;
             }
-            
+
             using var doc = JsonDocument.Parse(jsonContent);
             var root = doc.RootElement;
-            
+
             // 尝试读取players[0].current_hp来确认JSON结构
             try
             {
                 if (root.TryGetProperty("players", out JsonElement players) && players.ValueKind == JsonValueKind.Array && players.GetArrayLength() > 0)
                 {
                     var firstPlayer = players[0];
-                    
+
                     // 检查deck属性
                     if (firstPlayer.TryGetProperty("deck", out JsonElement deck))
                     {
@@ -3983,7 +3983,7 @@ public static partial class SavePointFeature
                     else
                     {
                     }
-                    
+
                     if (firstPlayer.TryGetProperty("current_hp", out JsonElement currentHp))
                     {
                     }
@@ -3995,13 +3995,13 @@ public static partial class SavePointFeature
             catch (Exception ex)
             {
             }
-            
+
             // 打印根节点的所有属性，帮助调试
-            
+
             // 尝试多种方式查找卡牌列表
             JsonElement? cardsArray = null;
             string? cardsPath = null;
-            
+
             // 方式1: players[0].deck (小写)
             if (root.TryGetProperty("players", out JsonElement playersElement) && playersElement.ValueKind == JsonValueKind.Array && playersElement.GetArrayLength() > 0)
             {
@@ -4012,7 +4012,7 @@ public static partial class SavePointFeature
                     cardsPath = "players[0].deck";
                 }
             }
-            
+
             // 方式2: Players[0].Deck (大写 - 兼容旧代码)
             if (!cardsArray.HasValue)
             {
@@ -4035,7 +4035,7 @@ public static partial class SavePointFeature
                     }
                 }
             }
-            
+
             // 方式3: 直接在根节点找Deck或Cards
             if (!cardsArray.HasValue)
             {
@@ -4050,7 +4050,7 @@ public static partial class SavePointFeature
                     cardsPath = "Cards";
                 }
             }
-            
+
             if (!cardsArray.HasValue || cardsArray.Value.ValueKind != JsonValueKind.Array || cardsArray.Value.GetArrayLength() == 0)
             {
                 var noCardsLabel = new Label
@@ -4062,7 +4062,7 @@ public static partial class SavePointFeature
                 listContainer.AddChild(noCardsLabel);
                 return;
             }
-            
+
             // 显示卡牌列表
             int cardIndex = 0;
             foreach (var card in cardsArray.Value.EnumerateArray())
@@ -4073,14 +4073,14 @@ public static partial class SavePointFeature
                     SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
                 };
                 cardRow.AddThemeConstantOverride("separation", 8);
-                
+
                 // 获取卡牌名称
                 string cardName = "Unknown Card";
                 string cardId = "";
                 int floorAdded = 0;
                 int upgradeLevel = 0;
                 string localizedName = null;
-                
+
                 try
                 {
                     if (card.TryGetProperty("id", out JsonElement idProp))
@@ -4110,7 +4110,7 @@ public static partial class SavePointFeature
                     {
                         cardName = card.GetRawText().Substring(0, Math.Min(50, card.GetRawText().Length)) + "...";
                     }
-                    
+
                     // 尝试获取本地化的卡牌名称
                     if (!string.IsNullOrEmpty(cardId))
                     {
@@ -4120,7 +4120,7 @@ public static partial class SavePointFeature
                         {
                             key = key.Substring(5);
                         }
-                        
+
                         // 定义所有要尝试的本地化组合 - 参考CardModel.TitleLocString
                         var attempts = new List<(string table, string key)>()
                         {
@@ -4137,7 +4137,7 @@ public static partial class SavePointFeature
                             ("ui", key),
                             ("ui", cardId),
                         };
-                        
+
                         // 尝试每个组合
                         foreach (var (table, locKey) in attempts)
                         {
@@ -4145,7 +4145,7 @@ public static partial class SavePointFeature
                             {
                                 var locString = new LocString(table, locKey);
                                 string locResult = locString.GetFormattedText();
-                                
+
                                 // 如果不是占位符，就使用它
                                 if (!string.IsNullOrEmpty(locResult) && !locResult.StartsWith("[") && !locResult.StartsWith("("))
                                 {
@@ -4158,13 +4158,13 @@ public static partial class SavePointFeature
                             }
                         }
                     }
-                    
+
                     // 获取floor_added_to_deck
                     if (card.TryGetProperty("floor_added_to_deck", out JsonElement floorProp))
                     {
                         floorAdded = floorProp.GetInt32();
                     }
-                    
+
                     // 获取current_upgrade_level
                     if (card.TryGetProperty("current_upgrade_level", out JsonElement upgradeProp))
                     {
@@ -4172,7 +4172,7 @@ public static partial class SavePointFeature
                     }
                 }
                 catch { }
-                
+
                 // 显示卡牌名称和参数
                 string displayText = cardId;
                 if (!string.IsNullOrEmpty(localizedName))
@@ -4188,7 +4188,7 @@ public static partial class SavePointFeature
                     }
                     displayText += "]";
                 }
-                
+
                 var cardLabel = new Label
                 {
                     Text = displayText,
@@ -4196,7 +4196,7 @@ public static partial class SavePointFeature
                     HorizontalAlignment = HorizontalAlignment.Left
                 };
                 cardRow.AddChild(cardLabel);
-                
+
                 // 如果是单人模式，添加删除按钮
                 if (isSinglePlayer)
                 {
@@ -4212,7 +4212,7 @@ public static partial class SavePointFeature
                     };
                     cardRow.AddChild(deleteCardButton);
                 }
-                
+
                 listContainer.AddChild(cardRow);
                 cardIndex++;
             }
@@ -4234,7 +4234,7 @@ public static partial class SavePointFeature
         try
         {
             Initialize();
-            
+
             SavePointRecord? record;
             lock (_lock)
             {
@@ -4245,42 +4245,42 @@ public static partial class SavePointFeature
                 }
                 record = _savePoints[savePointIndex];
             }
-            
+
             if (string.IsNullOrEmpty(record?.SaveFileName))
             {
                 ShowFeedback(L10n.FeedbackNoSaveData);
                 return;
             }
-            
+
             if (record.IsMultiplayer)
             {
                 ShowFeedback(L10n.OnlySinglePlayerCanDelete);
                 return;
             }
-            
+
             var savePointPath = Path.Combine(_savePointsDir, record.SaveFileName);
             if (!File.Exists(savePointPath))
             {
                 ShowFeedback(L10n.FeedbackFileNotFound);
                 return;
             }
-            
+
             var saveContent = File.ReadAllText(savePointPath);
-            
+
             // 解析JSON并删除卡牌
             using var doc = JsonDocument.Parse(saveContent);
             using var stream = new MemoryStream();
             using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-            
+
             ProcessAndDeleteCard(doc.RootElement, writer, cardIndex);
             writer.Flush();
             stream.Position = 0;
-            
+
             var modifiedJson = System.Text.Encoding.UTF8.GetString(stream.ToArray());
             File.WriteAllText(savePointPath, modifiedJson);
-            
+
             ShowFeedback(L10n.CardDeleted);
-            
+
             // 刷新对话框
             window.Hide();
             window.QueueFree();
@@ -4298,7 +4298,7 @@ public static partial class SavePointFeature
         if (element.ValueKind == JsonValueKind.Object)
         {
             writer.WriteStartObject();
-            
+
             // 先检查是否有deck属性
             bool hasDeck = false;
             foreach (var prop in element.EnumerateObject())
@@ -4309,7 +4309,7 @@ public static partial class SavePointFeature
                     break;
                 }
             }
-            
+
             // 如果有deck，处理它
             if (hasDeck)
             {
@@ -4319,7 +4319,7 @@ public static partial class SavePointFeature
                     {
                         writer.WritePropertyName(prop.Name);
                         writer.WriteStartArray();
-                        
+
                         int currentIndex = 0;
                         foreach (var card in prop.Value.EnumerateArray())
                         {
@@ -4329,7 +4329,7 @@ public static partial class SavePointFeature
                             }
                             currentIndex++;
                         }
-                        
+
                         writer.WriteEndArray();
                     }
                     else
@@ -4350,11 +4350,11 @@ public static partial class SavePointFeature
                         processedPlayers = true;
                         writer.WritePropertyName(prop.Name);
                         writer.WriteStartArray();
-                        
+
                         foreach (var player in prop.Value.EnumerateArray())
                         {
                             writer.WriteStartObject();
-                            
+
                             bool playerHasDeck = false;
                             foreach (var playerProp in player.EnumerateObject())
                             {
@@ -4364,7 +4364,7 @@ public static partial class SavePointFeature
                                     break;
                                 }
                             }
-                            
+
                             if (playerHasDeck)
                             {
                                 foreach (var playerProp in player.EnumerateObject())
@@ -4373,7 +4373,7 @@ public static partial class SavePointFeature
                                     {
                                         writer.WritePropertyName(playerProp.Name);
                                         writer.WriteStartArray();
-                                        
+
                                         int currentIndex = 0;
                                         foreach (var card in playerProp.Value.EnumerateArray())
                                         {
@@ -4383,7 +4383,7 @@ public static partial class SavePointFeature
                                             }
                                             currentIndex++;
                                         }
-                                        
+
                                         writer.WriteEndArray();
                                     }
                                     else
@@ -4401,10 +4401,10 @@ public static partial class SavePointFeature
                                     playerProp.Value.WriteTo(writer);
                                 }
                             }
-                            
+
                             writer.WriteEndObject();
                         }
-                        
+
                         writer.WriteEndArray();
                     }
                     else
@@ -4414,7 +4414,7 @@ public static partial class SavePointFeature
                     }
                 }
             }
-            
+
             writer.WriteEndObject();
         }
         else if (element.ValueKind == JsonValueKind.Array)
@@ -4436,7 +4436,7 @@ public static partial class SavePointFeature
     {
         // 防止递归过深
         if (depth > 10) return null;
-        
+
         try
         {
             // 如果是对象，检查是否有Deck或Cards属性
@@ -4452,7 +4452,7 @@ public static partial class SavePointFeature
                     Log.Info($"[KKSavePoint] Found Cards array with {cards.GetArrayLength()} cards at depth {depth}");
                     return cards;
                 }
-                
+
                 // 递归检查所有子属性
                 foreach (var prop in element.EnumerateObject())
                 {
@@ -4460,7 +4460,7 @@ public static partial class SavePointFeature
                     if (result.HasValue) return result;
                 }
             }
-            
+
             // 如果是数组，递归检查所有元素
             if (element.ValueKind == JsonValueKind.Array)
             {
@@ -4472,7 +4472,7 @@ public static partial class SavePointFeature
             }
         }
         catch { }
-        
+
         return null;
     }
 
@@ -4540,7 +4540,7 @@ public static partial class SavePointFeature
                     SelectedCardId = _pendingSelectedCardId,
                     SelectedCardIndex = _pendingSelectedCardIndex
                 };
-                
+
                 // 立即清空，防止错误地附加到后续卡牌
                 _pendingSelectedCardId = null;
                 _pendingSelectedCardIndex = null;
@@ -4702,7 +4702,7 @@ public static partial class SavePointFeature
             if (!FeatureSettingsStore.Current.EnableSavePoint) return;
 
             if (SavePointFeature._isReplaying)
-            { 
+            {
                 return;
             }
 
@@ -4749,7 +4749,7 @@ public static partial class SavePointFeature
             ref Task<IEnumerable<CardModel>> __result)
         {
             if (!FeatureSettingsStore.Current.EnableSavePoint) return true;
-            
+
             if (SavePointFeature._isReplaying && SavePointFeature._currentReplaySelector != null)
             {
                 Log.Info($"[KKSavePoint] FromSimpleGrid intercepted during replay, using our selector");
@@ -4804,76 +4804,6 @@ public static partial class SavePointFeature
         }
     }
 
-    [HarmonyPatch(typeof(Hook), nameof(Hook.AfterTurnEnd))]
-    public static class HookAfterTurnEndPatch
-    {
-        public static void Postfix(CombatState combatState, CombatSide side)
-        {
-            if (!FeatureSettingsStore.Current.EnableSavePoint) return;
-
-            // 如果正在回放，不保存记录
-            if (SavePointFeature._isReplaying)
-            {
-                Log.Info("[KKSavePoint] Is replaying, skipping turn playback save");
-                return;
-            }
-
-            try
-            {
-                if (side == CombatSide.Player)
-                {
-                    var player = LocalContext.GetMe(combatState.RunState);
-                    int playerHpAfterTurn = player != null ? (int)player.Creature.CurrentHp : 0;
-                    int playerBlockAfterTurn = player != null ? (int)player.Creature.Block : 0;
-
-                    var monsterHpAfterTurn = new Dictionary<string, int>();
-                    if (combatState.Enemies != null)
-                    {
-                        foreach (dynamic enemy in combatState.Enemies)
-                        {
-                            if (enemy != null)
-                            {
-                                try
-                                {
-                                    string enemyId = enemy.Id?.ToString() ?? enemy.GetHashCode().ToString();
-                                    int hp = (int)(enemy.Creature?.CurrentHp ?? 0);
-                                    monsterHpAfterTurn[enemyId] = hp;
-                                }
-                                catch
-                                {
-                                    monsterHpAfterTurn[enemy.GetHashCode().ToString()] = 0;
-                                }
-                            }
-                        }
-                    }
-
-                    var turnData = new TurnPlaybackData
-                    {
-                        TurnNumber = combatState.RoundNumber,
-                        CardPlays = new List<CardPlayRecord>(_currentTurnCardPlays),
-                        PlayerHpBeforeTurn = _playerHpBeforeTurn,
-                        PlayerHpAfterTurn = playerHpAfterTurn,
-                        BlockBeforeTurn = _playerBlockBeforeTurn,
-                        BlockAfterTurn = playerBlockAfterTurn,
-                        MonsterHpBeforeTurn = new Dictionary<string, int>(_monsterHpBeforeTurn),
-                        MonsterHpAfterTurn = monsterHpAfterTurn,
-                        Gold = player?.Gold ?? 0,
-                        Timestamp = DateTime.Now
-                    };
-
-                    _turnPlaybackData.Add(turnData);
-                    Log.Info($"[KKSavePoint] Turn saved: Turn {turnData.TurnNumber}, Card plays: {turnData.CardPlays.Count}");
-
-                    _currentTurnCardPlays.Clear();
-                    _currentActionIndex = 0;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"[KKSavePoint] Failed to save turn playback: {ex}");
-            }
-        }
-    }
 
     [HarmonyPatch(typeof(Hook), nameof(Hook.AfterPlayerTurnStart))]
     public static class HookAfterPlayerTurnStartPatch
@@ -4955,41 +4885,23 @@ public partial class SavePointDropTarget : Control
 
 
     public override bool _CanDropData(Vector2 atPosition, Variant data)
-
     {
-
         if (data.VariantType == Variant.Type.Array)
-
         {
-
             var files = data.AsStringArray();
-
             if (files != null)
-
             {
-
                 foreach (var file in files)
-
                 {
-
                     if (file.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase) ||
-
                         file.EndsWith(".json", System.StringComparison.OrdinalIgnoreCase))
-
                     {
-
                         return true;
-
                     }
-
                 }
-
             }
-
         }
-
         return false;
-
     }
 
 
@@ -5089,80 +5001,10 @@ public static class SavePointAfterRoomEnteredPatch
         int floor = 0;
         try
         {
-            // 尝试从runState获取楼层信息 - 更全面的探索
             var runStateObj = runState as dynamic;
             if (runStateObj != null)
             {
-                // 尝试方法1: Map相关属性（FloorIcon可能使用的路径）
-                try
-                {
-                    var map = runStateObj.Map;
-                    if (map != null)
-                    {
-                        // 尝试不同的Map属性
-                        try { if (map.CurrentFloor > 0) floor = map.CurrentFloor; } catch { }
-                        try { if (map.Floor > 0) floor = map.Floor; } catch { }
-                        try { if (map.ActFloor > 0) floor = map.ActFloor; } catch { }
-
-                        // 尝试Act相关属性
-                        try
-                        {
-                            var currentAct = map.CurrentAct;
-                            if (currentAct != null)
-                            {
-                                try { if (currentAct.CurrentFloor > 0) floor = currentAct.CurrentFloor; } catch { }
-                                try { if (currentAct.Floor > 0) floor = currentAct.Floor; } catch { }
-                                try { if (currentAct.ActFloor > 0) floor = currentAct.ActFloor; } catch { }
-                            }
-                        }
-                        catch { }
-
-                        // 尝试Map的其他可能属性
-                        try { if (map.CurrentActFloor > 0) floor = map.CurrentActFloor; } catch { }
-                        try { if (map.ActiveFloor > 0) floor = map.ActiveFloor; } catch { }
-                    }
-                }
-                catch { }
-
-                // 尝试方法2: RunState直接属性
-                try { if (runStateObj.CurrentFloor > 0) floor = runStateObj.CurrentFloor; } catch { }
-                try { if (runStateObj.Floor > 0) floor = runStateObj.Floor; } catch { }
-                try { if (runStateObj.ActFloor > 0) floor = runStateObj.ActFloor; } catch { }
-                try { if (runStateObj.CurrentActFloor > 0) floor = runStateObj.CurrentActFloor; } catch { }
-                try { if (runStateObj.ActiveFloor > 0) floor = runStateObj.ActiveFloor; } catch { }
-
-                // 尝试方法3: 其他可能的路径
-                try
-                {
-                    var gameState = runStateObj.GameState;
-                    if (gameState != null)
-                    {
-                        try { if (gameState.CurrentFloor > 0) floor = gameState.CurrentFloor; } catch { }
-                        try { if (gameState.Floor > 0) floor = gameState.Floor; } catch { }
-                    }
-                }
-                catch { }
-
-                try
-                {
-                    var state = runStateObj.State;
-                    if (state != null)
-                    {
-                        try { if (state.CurrentFloor > 0) floor = state.CurrentFloor; } catch { }
-                        try { if (state.Floor > 0) floor = state.Floor; } catch { }
-                    }
-                }
-                catch { }
-            }
-
-            // 尝试从room获取楼层信息
-            if (floor == 0 && room != null)
-            {
-                var roomObj = room as dynamic;
-                try { if (roomObj.Floor > 0) floor = roomObj.Floor; } catch { }
-                try { if (roomObj.CurrentFloor > 0) floor = roomObj.CurrentFloor; } catch { }
-                try { if (roomObj.RoomFloor > 0) floor = roomObj.RoomFloor; } catch { }
-                try { if (roomObj.ActFloor > 0) floor = roomObj.ActFloor; } catch { }
+                try { if (runStateObj.TotalFloor > 0) floor = runStateObj.TotalFloor; } catch { }
             }
         }
         catch { }
