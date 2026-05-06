@@ -1,3 +1,4 @@
 1.C:\Users\Marisa3\AppData\Roaming\SlayTheSpire2\logs\godot.log 当我发出指令，先查看游戏日志查找问题
 2.直接编译到 C:\soft\steam\steamapps\common\Slay the Spire 2\mods\KKSavePoint\ 
-3.  "\sts2" 是游戏源代码位置，为编写mod提供参考
+3.C:\dev\sd1\sts2_ExampleMod-main\sts2\ 是游戏源代码位置，为编写mod提供参考
+4.current_run_mp.save 在C:\Users\Marisa3\AppData\Roaming\SlayTheSpire2\steam\76561198293900031\modded\profile1\saves\current_run_mp.save
