@@ -1590,24 +1590,24 @@ public static partial class SavePointFeature
                     Log.Info("[KKSavePoint] Host: Save data prepared and rollback notification sent, returning to menu...");
                     ShowFeedback("正在返回主菜单，准备重新加载房间...");
                     _pendingHostSaveData = saveData.SaveData;
-                    _autoNavigateToHostFromSave = true;
-                    _autoNavigateToJoin = false;
+                    _shouldHost = true;
+                    _shouldJoin = false;
                     ScheduleAutoNavigateToMultiplayer();
                 }
                 else if (IsClient())
                 {
                     Log.Info("[KKSavePoint] Client: Returning to menu, will auto navigate to join...");
                     ShowFeedback("正在返回主菜单，准备重新加入房间...");
-                    _autoNavigateToHostFromSave = false;
-                    _autoNavigateToJoin = true;
+                    _shouldHost = false;
+                    _shouldJoin = true;
                     ScheduleAutoNavigateToMultiplayer();
                 }
                 else
                 {
                     Log.Info("[KKSavePoint] Multiplayer but role not detected, returning to menu...");
                     ShowFeedback("正在返回主菜单...");
-                    _autoNavigateToHostFromSave = false;
-                    _autoNavigateToJoin = false;
+                    _shouldHost = false;
+                    _shouldJoin = false;
                 }
 
                 DisconnectAndReturnToMainMenu();

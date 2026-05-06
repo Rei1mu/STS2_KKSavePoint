@@ -29,9 +29,9 @@ public partial class SavePointFeature
     private static bool? _isClient = null;
     private static object? _cachedNetService = null;
     private static RunSessionState? _lastSessionState = null;
-    private static bool _autoNavigateToHostFromSave = false;
-    private static bool _autoNavigateToJoin = false;
     private static bool _navigatingFromMainMenu = false;
+    private static bool _shouldHost = false;
+    private static bool _shouldJoin = false;
     private static SerializableRun? _pendingHostSaveData = null;
     private static bool _pendingRollbackFromHost = false;
     private static bool _hostRollbackInProgress = false;
@@ -292,7 +292,7 @@ public partial class SavePointFeature
             {
                 Log.Info("[KKSavePoint] Detected host-initiated rollback, client will auto rejoin...");
                 _pendingRollbackFromHost = false;
-                _autoNavigateToJoin = true;
+                _shouldJoin = true;
                 DisconnectAndReturnToMainMenu();
             }
         }
@@ -680,101 +680,22 @@ public partial class SavePointFeature
         public static void Postfix(NMainMenu __instance)
         {
             Log.Info("[KKSavePoint] NMainMenu._Ready called, checking auto-navigation...");
-
-            // 如果是重载后返回，使用 AutoNavigateFromMainMenu
-            if (_autoNavigateToHostFromSave || _autoNavigateToJoin)
+            Log.Info($"[KKSavePoint] Flags: _shouldHost={_shouldHost}, _shouldJoin={_shouldJoin}");
+            
+            if (_shouldHost)
             {
-                Log.Info("[KKSavePoint] Rollback return detected, using AutoNavigateFromMainMenu...");
-                AutoNavigateFromMainMenu(__instance);
-            }
-            else
-            {
-                // 进入游戏时自动进入 host from save
-                Log.Info("[KKSavePoint] Game start detected, auto-entering host from save...");
                 AutoEnterHostFromSaveOnGameStart(__instance);
             }
-        }
-    }
-
-    // 监听主菜单的 Visible 属性变化，在返回主菜单时触发自动导航
-    [HarmonyPatch]
-    public static class NMainMenuVisiblePatch
-    {
-        static MethodInfo TargetMethod()
-        {
-            return typeof(Control).GetProperty("Visible", BindingFlags.Instance | BindingFlags.Public)?.SetMethod;
-        }
-
-        public static void Postfix(object __instance, bool value)
-        {
-            // 只处理 NMainMenu 的情况
-            if (__instance is NMainMenu mainMenu && value && !_navigatingFromMainMenu)
+            else if (_shouldJoin)
             {
-                _navigatingFromMainMenu = true;
-                AutoNavigateFromMainMenu(mainMenu);
-            }
-        }
-    }
-
-    // 监听多人模式子菜单打开事件，在进入多人模式子菜单时自动点击 _loadButton
-    [HarmonyPatch(typeof(NSubmenu), "OnSubmenuOpened")]
-    public static class NSubmenuOnSubmenuOpenedPatch
-    {
-        public static void Postfix(NSubmenu __instance)
-        {
-            if (!FeatureSettingsStore.Current.EnableSavePoint) return;
-
-            // 检查是否是 NMultiplayerSubmenu
-            if (__instance is NMultiplayerSubmenu multiplayerSubmenu && _autoNavigateToHostFromSave)
-            {
-                Log.Info("[KKSavePoint] NMultiplayerSubmenu opened, scheduling auto click _loadButton...");
-                TaskHelper.RunSafely(AutoClickLoadButtonDelayed(multiplayerSubmenu));
-            }
-        }
-    }
-
-    private static async Task AutoClickLoadButtonDelayed(NMultiplayerSubmenu instance)
-    {
-        try
-        {
-            await Task.Delay(500);
-
-            Log.Info("[KKSavePoint] Auto clicking _loadButton...");
-
-            var loadButtonField = instance.GetType().GetField("_loadButton", BindingFlags.Instance | BindingFlags.NonPublic);
-            if (loadButtonField != null)
-            {
-                var loadButton = loadButtonField.GetValue(instance);
-                if (loadButton != null)
-                {
-                    var emitSignalMethod = loadButton.GetType().GetMethod("EmitSignal", new Type[] { typeof(StringName) });
-                    if (emitSignalMethod != null)
-                    {
-                        emitSignalMethod.Invoke(loadButton, new object[] { NClickableControl.SignalName.Released });
-                        Log.Info("[KKSavePoint] Successfully emitted Pressed signal on _loadButton!");
-                        _autoNavigateToHostFromSave = false;
-                    }
-                    else
-                    {
-                        Log.Warn("[KKSavePoint] EmitSignal method not found on _loadButton");
-                    }
-                }
-                else
-                {
-                    Log.Warn("[KKSavePoint] _loadButton is null!");
-                }
+                AutoEnterJoinHostOnGameStart(__instance);
             }
             else
             {
-                Log.Warn("[KKSavePoint] _loadButton field not found!");
+                Log.Info("[KKSavePoint] No auto-navigation flags set, skipping");
             }
         }
-        catch (Exception ex)
-        {
-            Log.Error($"[KKSavePoint] Error in AutoClickLoadButtonDelayed: {ex}");
-        }
     }
-
 
     // 在设置自动导航标志后调用，NMainMenu._Ready 会自动触发自动导航
     public static void ScheduleAutoNavigateToMultiplayer()
@@ -783,151 +704,20 @@ public partial class SavePointFeature
         Log.Info("[KKSavePoint] ScheduleAutoNavigateToMultiplayer called, will auto-navigate when NMainMenu._Ready");
     }
 
-    // 使用反射操作主菜单，避免类型冲突
-    private static void AutoNavigateFromMainMenuReflection(object mainMenuObject)
-    {
-        try
-        {
-            Log.Info("[KKSavePoint] AutoNavigateFromMainMenuReflection started...");
-
-            // 检查是否正在导航中，防止重复执行
-            if (_navigatingFromMainMenu)
-            {
-                Log.Warn("[KKSavePoint] Already navigating from main menu, skipping duplicate navigation");
-                return;
-            }
-            _navigatingFromMainMenu = true;
-
-            Log.Info("[KKSavePoint] Auto clicking multiplayer button (reflection)...");
-
-            // 使用反射查找 _multiplayerButton 字段
-            var multiplayerButtonField = mainMenuObject.GetType().GetField("_multiplayerButton", BindingFlags.Instance | BindingFlags.NonPublic);
-            if (multiplayerButtonField != null)
-            {
-                var multiplayerButton = multiplayerButtonField.GetValue(mainMenuObject);
-                if (multiplayerButton != null)
-                {
-                    // ForceClick
-                    var forceClickMethod = multiplayerButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public);
-                    if (forceClickMethod != null)
-                    {
-                        Log.Info("[KKSavePoint] Calling ForceClick on _multiplayerButton (reflection)...");
-                        forceClickMethod.Invoke(multiplayerButton, null);
-                        Log.Info("[KKSavePoint] Successfully clicked _multiplayerButton (reflection)!");
-                    }
-
-                    // 设置标志，让 NMultiplayerSubmenu 打开时自动点击 host from save
-                    _autoNavigateToHostFromSave = true;
-                    _autoNavigateToJoin = false;
-                }
-            }
-            else
-            {
-                Log.Warn("[KKSavePoint] _multiplayerButton field not found in MainMenu object");
-            }
-
-            _navigatingFromMainMenu = false;
-        }
-        catch (Exception ex)
-        {
-            _navigatingFromMainMenu = false;
-            Log.Error($"[KKSavePoint] Error in AutoNavigateFromMainMenuReflection: {ex}");
-        }
-    }
-
-    private static void AutoNavigateFromMainMenu(NMainMenu __instance)
-    {
-        try
-        {
-            Log.Info($"[KKSavePoint] NMainMenu auto navigate, checking flags: host={_autoNavigateToHostFromSave}, join={_autoNavigateToJoin}");
-
-            if (!FeatureSettingsStore.Current.EnableSavePoint)
-            {
-                _navigatingFromMainMenu = false;
-                return;
-            }
-
-            // 重载后返回主菜单时自动导航到 multiplayer -> host from save
-            if (_autoNavigateToHostFromSave || _autoNavigateToJoin)
-            {
-                // 检查是否正在导航中，防止重复执行
-                if (_navigatingFromMainMenu)
-                {
-                    Log.Warn("[KKSavePoint] Already navigating from main menu, skipping duplicate navigation");
-                    return;
-                }
-                _navigatingFromMainMenu = true;
-
-                // 检查是否在主菜单界面
-                if (!(__instance is NMainMenu))
-                {
-                    Log.Warn("[KKSavePoint] Not in NMainMenu, skipping multiplayer button click");
-                    _navigatingFromMainMenu = false;
-                    return;
-                }
-
-                Log.Info("[KKSavePoint] Auto clicking multiplayer button...");
-
-                // 设置标志，让 NMultiplayerSubmenu._Ready 时自动点击 host from save
-                _autoNavigateToHostFromSave = true;
-                _autoNavigateToJoin = false;
-
-                var multiplayerButtonField = __instance.GetType().GetField("_multiplayerButton", BindingFlags.Instance | BindingFlags.NonPublic);
-                if (multiplayerButtonField != null)
-                {
-                    var multiplayerButton = multiplayerButtonField.GetValue(__instance);
-                    if (multiplayerButton != null)
-                    {
-                        // 尝试 EmitSignal
-                        var emitSignalMethod = multiplayerButton.GetType().GetMethod("EmitSignal", new Type[] { typeof(StringName) });
-                        if (emitSignalMethod != null)
-                        {
-                            Log.Info("[KKSavePoint] Emitting Released signal on _multiplayerButton...");
-                            emitSignalMethod.Invoke(multiplayerButton, new object[] { NClickableControl.SignalName.Released });
-                            Log.Info("[KKSavePoint] Successfully emitted Released signal on _multiplayerButton!");
-                        }
-                        else
-                        {
-                            // 尝试 ForceClick
-                            var forceClickMethod = multiplayerButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public);
-                            if (forceClickMethod != null)
-                            {
-                                Log.Info("[KKSavePoint] Calling ForceClick on _multiplayerButton...");
-                                forceClickMethod.Invoke(multiplayerButton, null);
-                                Log.Info("[KKSavePoint] Successfully clicked _multiplayerButton!");
-                            }
-                            else
-                            {
-                                Log.Warn("[KKSavePoint] Neither EmitSignal nor ForceClick method found on _multiplayerButton");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Log.Warn("[KKSavePoint] _multiplayerButton is null");
-                    }
-                }
-                else
-                {
-                    Log.Warn("[KKSavePoint] _multiplayerButton field not found");
-                }
-            }
-
-            _navigatingFromMainMenu = false;
-        }
-        catch (Exception ex)
-        {
-            _navigatingFromMainMenu = false;
-            Log.Error($"[KKSavePoint] Error in AutoNavigateFromMainMenu: {ex}");
-        }
-    }
-
     // 进入游戏时自动进入 host from save（与重载返回区分开）
     private static void AutoEnterHostFromSaveOnGameStart(NMainMenu __instance)
     {
         try
         {
             Log.Info("[KKSavePoint] AutoEnterHostFromSaveOnGameStart started...");
+            Log.Info($"[KKSavePoint] Checking flags: _shouldHost={_shouldHost}");
+
+            // 只有 _shouldHost 为 true 时才执行
+            if (!_shouldHost)
+            {
+                Log.Info("[KKSavePoint] Not hosting, skipping auto navigation");
+                return;
+            }
 
             // 检查是否正在导航中，防止重复执行
             if (_navigatingFromMainMenu)
@@ -945,11 +735,7 @@ public partial class SavePointFeature
                 return;
             }
 
-            Log.Info("[KKSavePoint] Auto clicking multiplayer button (game start)...");
-
-            // 设置标志，让 NMultiplayerSubmenu._Ready 时自动点击 host from save
-            _autoNavigateToHostFromSave = true;
-            _autoNavigateToJoin = false;
+            Log.Info("[KKSavePoint] Auto clicking multiplayer button...");
 
             var multiplayerButtonField = __instance.GetType().GetField("_multiplayerButton", BindingFlags.Instance | BindingFlags.NonPublic);
             if (multiplayerButtonField != null)
@@ -960,18 +746,18 @@ public partial class SavePointFeature
                     var emitSignalMethod = multiplayerButton.GetType().GetMethod("EmitSignal", new Type[] { typeof(StringName) });
                     if (emitSignalMethod != null)
                     {
-                        Log.Info("[KKSavePoint] Emitting Released signal on _multiplayerButton (game start)...");
+                        Log.Info("[KKSavePoint] Emitting Released signal on _multiplayerButton...");
                         emitSignalMethod.Invoke(multiplayerButton, new object[] { NClickableControl.SignalName.Released });
-                        Log.Info("[KKSavePoint] Successfully emitted Released signal on _multiplayerButton (game start)!");
+                        Log.Info("[KKSavePoint] Successfully emitted Released signal on _multiplayerButton!");
                     }
                     else
                     {
                         var forceClickMethod = multiplayerButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public);
                         if (forceClickMethod != null)
                         {
-                            Log.Info("[KKSavePoint] Calling ForceClick on _multiplayerButton (game start)...");
+                            Log.Info("[KKSavePoint] Calling ForceClick on _multiplayerButton...");
                             forceClickMethod.Invoke(multiplayerButton, null);
-                            Log.Info("[KKSavePoint] Successfully clicked _multiplayerButton (game start)!");
+                            Log.Info("[KKSavePoint] Successfully clicked _multiplayerButton!");
                         }
                     }
                 }
@@ -983,6 +769,74 @@ public partial class SavePointFeature
         {
             _navigatingFromMainMenu = false;
             Log.Error($"[KKSavePoint] Error in AutoEnterHostFromSaveOnGameStart: {ex}");
+        }
+    }
+
+    // 进入游戏时自动加入房间（与重载返回区分开）
+    private static void AutoEnterJoinHostOnGameStart(NMainMenu __instance)
+    {
+        try
+        {
+            Log.Info("[KKSavePoint] AutoEnterJoinHostOnGameStart started...");
+            Log.Info($"[KKSavePoint] Checking flags: _shouldJoin={_shouldJoin}");
+
+            // 只有 _shouldJoin 为 true 时才执行
+            if (!_shouldJoin)
+            {
+                Log.Info("[KKSavePoint] Not joining, skipping auto navigation");
+                return;
+            }
+
+            // 检查是否正在导航中，防止重复执行
+            if (_navigatingFromMainMenu)
+            {
+                Log.Warn("[KKSavePoint] Already navigating from main menu, skipping duplicate navigation");
+                return;
+            }
+            _navigatingFromMainMenu = true;
+
+            // 检查是否在主菜单界面
+            if (!(__instance is NMainMenu))
+            {
+                Log.Warn("[KKSavePoint] Not in NMainMenu, skipping multiplayer button click");
+                _navigatingFromMainMenu = false;
+                return;
+            }
+
+            Log.Info("[KKSavePoint] Auto clicking multiplayer button...");
+
+            var multiplayerButtonField = __instance.GetType().GetField("_multiplayerButton", BindingFlags.Instance | BindingFlags.NonPublic);
+            if (multiplayerButtonField != null)
+            {
+                var multiplayerButton = multiplayerButtonField.GetValue(__instance);
+                if (multiplayerButton != null)
+                {
+                    var emitSignalMethod = multiplayerButton.GetType().GetMethod("EmitSignal", new Type[] { typeof(StringName) });
+                    if (emitSignalMethod != null)
+                    {
+                        Log.Info("[KKSavePoint] Emitting Released signal on _multiplayerButton...");
+                        emitSignalMethod.Invoke(multiplayerButton, new object[] { NClickableControl.SignalName.Released });
+                        Log.Info("[KKSavePoint] Successfully emitted Released signal on _multiplayerButton!");
+                    }
+                    else
+                    {
+                        var forceClickMethod = multiplayerButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public);
+                        if (forceClickMethod != null)
+                        {
+                            Log.Info("[KKSavePoint] Calling ForceClick on _multiplayerButton...");
+                            forceClickMethod.Invoke(multiplayerButton, null);
+                            Log.Info("[KKSavePoint] Successfully clicked _multiplayerButton!");
+                        }
+                    }
+                }
+            }
+
+            _navigatingFromMainMenu = false;
+        }
+        catch (Exception ex)
+        {
+            _navigatingFromMainMenu = false;
+            Log.Error($"[KKSavePoint] Error in AutoEnterJoinHostOnGameStart: {ex}");
         }
     }
 
@@ -1031,12 +885,10 @@ public partial class SavePointFeature
             try
             {
                 Log.Info($"[KKSavePoint] NMultiplayerSubmenu.Postfix called, instance type: {__instance.GetType().FullName}");
-                Log.Info($"[KKSavePoint] NMultiplayerSubmenu ready, checking flags: host={_autoNavigateToHostFromSave}, join={_autoNavigateToJoin}");
+                Log.Info($"[KKSavePoint] NMultiplayerSubmenu ready, checking flags: _shouldHost={_shouldHost}, _shouldJoin={_shouldJoin}");
 
-                if (_autoNavigateToHostFromSave)
+                if (_shouldHost)
                 {
-                    _autoNavigateToHostFromSave = false;  // 清除标志，防止重复调用
-
                     // 添加延迟以等待菜单转换完成，避免 NLoadingOverlay disposed 错误
                     Log.Info("[KKSavePoint] Scheduling delayed click on load button (waiting for menu transition)...");
 
@@ -1048,12 +900,13 @@ public partial class SavePointFeature
                     {
                         GD.Print("[KKSavePoint] Delay complete, now clicking load button...");
                         ClickLoadButton(__instance);
+                        _shouldHost = false;  // 清除 host 标志
                         timer.QueueFree();
                     };
                     NGame.Instance.AddChild(timer);
                     timer.Start();
                 }
-                else if (_autoNavigateToJoin)
+                else if (_shouldJoin)
                 {
                     Log.Info("[KKSavePoint] Auto navigating to Join...");
                     var joinButtonMethod = __instance.GetType().GetMethod("OnJoinFriendsPressed", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
@@ -1067,11 +920,13 @@ public partial class SavePointFeature
                         Log.Warn("[KKSavePoint] OnJoinFriendsPressed method not found!");
                     }
 
-                    _autoNavigateToJoin = false;
+                    _shouldJoin = false;  // 清除 join 标志
                 }
             }
             catch (Exception ex)
             {
+                _shouldHost = false;  // 出错时也要清除标志
+                _shouldJoin = false;
                 Log.Error($"[KKSavePoint] Error in NMultiplayerSubmenuPatch.Postfix: {ex}");
             }
         }
@@ -1121,7 +976,7 @@ public partial class SavePointFeature
                     {
                         Log.Info("[KKSavePoint] Client received rollback request, returning to main menu...");
                         _pendingRollbackFromHost = true;
-                        _autoNavigateToJoin = true;
+                        _shouldJoin = true;
                         DisconnectAndReturnToMainMenu();
                     }
                 }
@@ -1235,11 +1090,11 @@ public partial class SavePointFeature
             {
                 if (!FeatureSettingsStore.Current.EnableSavePoint) return;
 
-                if (_pendingRollbackFromHost || _autoNavigateToJoin)
+                if (_pendingRollbackFromHost || _shouldJoin)
                 {
                     Log.Info("[KKSavePoint] NJoinFriendScreen opened, starting auto join for rollback...");
                     _pendingRollbackFromHost = false;
-                    _autoNavigateToJoin = false;
+                    _shouldJoin = false;
                     _autoJoinAttempts = 0;
 
                     var timer = new Godot.Timer();

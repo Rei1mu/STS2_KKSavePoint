@@ -1,0 +1,594 @@
+MegaDot v4.5.1.m.9.mono.custom_build - https://godotengine.org
+D3D12 12_0 - Forward+ - Using Device #0: AMD - AMD Radeon RX 5700 XT
+WARNING: PSO caching is not implemented yet in the Direct3D 12 driver.
+   at: pipeline_cache_create (drivers/d3d12/rendering_device_driver_d3d12.cpp:4467)
+
+FMOD Sound System: Successfully initialized
+[INFO] Found release_info.json at: C:\soft\steam\steamapps\common\Slay the Spire 2\release_info.json
+[INFO] [Sentry.NET] Initialized: env=development, release=v0.103.2
+[INFO] Steamworks: attempting initialization...
+[INFO] Steam is running: True
+[INFO] Steamworks initialization succeeded!
+[INFO] Steam is enabled, we will write saves to steam storage. Enabled for account: True, app: True 
+[INFO] Registered 11 migrations
+[INFO] Current save versions: PrefsSave v2; ProfileSave v2; SerializableProgress v21; RunHistory v9; SerializableRun v16; SettingsSave v5
+[INFO] Found mod manifest file C:\soft\steam\steamapps\common\Slay the Spire 2\mods\KKSavePoint\KKSavePoint.deps.json
+[ERROR] Mod manifest C:\soft\steam\steamapps\common\Slay the Spire 2\mods\KKSavePoint\KKSavePoint.deps.json is missing the 'id' field! This is not allowed. The mod will not be loaded.
+   at MegaCrit.Sts2.Core.Modding.ModManager.ReadModManifest(String filename, ModSource source)
+   at MegaCrit.Sts2.Core.Modding.ModManager.ReadModsInDirRecursive(String path, ModSource source, List`1 newMods)
+   at MegaCrit.Sts2.Core.Modding.ModManager.ReadModsInDirRecursive(String path, ModSource source, List`1 newMods)
+   at MegaCrit.Sts2.Core.Modding.ModManager.Initialize(IModManagerFileIo fileIo, ModSettings settings)
+   at MegaCrit.Sts2.Core.Helpers.OneTimeInitialization.ExecuteVeryEarly()
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartup()
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartup()
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartupWrapper()
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartupWrapper()
+   at MegaCrit.Sts2.Core.Nodes.NGame._EnterTree()
+   at Godot.Node.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at Godot.CanvasItem.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at Godot.Control.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at MegaCrit.Sts2.Core.Nodes.NGame.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at Godot.Bridge.CSharpInstanceBridge.Call(IntPtr godotObjectGCHandle, godot_string_name* method, godot_variant** args, Int32 argCount, godot_variant_call_error* refCallError, godot_variant* ret)
+
+[INFO] Found mod manifest file C:\soft\steam\steamapps\common\Slay the Spire 2\mods\KKSavePoint\KKSavePoint.json
+[INFO] Found mod manifest file C:\soft\steam\steamapps\common\Slay the Spire 2\mods\RemoveMultiplayerPlayerLimit\RemoveMultiplayerPlayerLimit.json
+[INFO] Found mod manifest file C:\soft\steam\steamapps\common\Slay the Spire 2\mods\RemoveMultiplayerPlayerLimit\mod_manifest.json
+[ERROR] Mod manifest C:\soft\steam\steamapps\common\Slay the Spire 2\mods\RemoveMultiplayerPlayerLimit\mod_manifest.json is missing the 'id' field! This is not allowed. The mod will not be loaded.
+   at MegaCrit.Sts2.Core.Modding.ModManager.ReadModManifest(String filename, ModSource source)
+   at MegaCrit.Sts2.Core.Modding.ModManager.ReadModsInDirRecursive(String path, ModSource source, List`1 newMods)
+   at MegaCrit.Sts2.Core.Modding.ModManager.ReadModsInDirRecursive(String path, ModSource source, List`1 newMods)
+   at MegaCrit.Sts2.Core.Modding.ModManager.Initialize(IModManagerFileIo fileIo, ModSettings settings)
+   at MegaCrit.Sts2.Core.Helpers.OneTimeInitialization.ExecuteVeryEarly()
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartup()
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartup()
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartupWrapper()
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at MegaCrit.Sts2.Core.Nodes.NGame.GameStartupWrapper()
+   at MegaCrit.Sts2.Core.Nodes.NGame._EnterTree()
+   at Godot.Node.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at Godot.CanvasItem.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at Godot.Control.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at MegaCrit.Sts2.Core.Nodes.NGame.InvokeGodotClassMethod(godot_string_name& method, NativeVariantPtrArgs args, godot_variant& ret)
+   at Godot.Bridge.CSharpInstanceBridge.Call(IntPtr godotObjectGCHandle, godot_string_name* method, godot_variant** args, Int32 argCount, godot_variant_call_error* refCallError, godot_variant* ret)
+
+[INFO] Found mod manifest file C:\soft\steam\steamapps\common\Slay the Spire 2\mods\speedx4_24\SpeedX.json
+[INFO] Found mod manifest file C:\soft\steam\steamapps\common\Slay the Spire 2\mods\多人sl\QuickLink.json
+[INFO] Loading assembly DLL C:\soft\steam\steamapps\common\Slay the Spire 2\mods\speedx4_24\SpeedX.dll
+[INFO] Loading Godot PCK C:\soft\steam\steamapps\common\Slay the Spire 2\mods\speedx4_24\SpeedX.pck
+[INFO] Calling initializer method of type SpeedX.MainFile for SpeedX, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+[INFO] [sts2.piyixiajiuhenfen.speedx] Settings loaded from user://ModConfig/sts2.piyixiajiuhenfen.speedx.json
+[INFO] [sts2.piyixiajiuhenfen.speedx] I18n loaded: zhs (49 keys)
+[INFO] [sts2.piyixiajiuhenfen.speedx] SpeedX v0.10.5 initialized! Press F9 to open settings
+[INFO] Finished mod initialization for 'SpeedX' (SpeedX).
+[INFO] Loading assembly DLL C:\soft\steam\steamapps\common\Slay the Spire 2\mods\KKSavePoint\KKSavePoint.dll
+[INFO] Loading Godot PCK C:\soft\steam\steamapps\common\Slay the Spire 2\mods\KKSavePoint\KKSavePoint.pck
+[INFO] Calling initializer method of type KKSavePoint.ModEntry for KKSavePoint, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+[INFO] [KKSavePoint] ModEntry.OnModLoaded invoked by STS2.
+[INFO] [KKSavePoint] SaveManager found! Type: MegaCrit.Sts2.Core.Saves.SaveManager, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null
+[INFO] [KKSavePoint] SaveManager.Instance found!
+[INFO] [KKSavePoint] _saveStore found! Type: MegaCrit.Sts2.Core.Saves.CloudSaveStore, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null
+[INFO] [KKSavePoint] LocalStore found! Type: MegaCrit.Sts2.Core.Saves.GodotFileIo, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null
+[INFO] [KKSavePoint] --- LocalStore Fields ---
+[INFO] [KKSavePoint] LS Field: <SaveDir>k__BackingField (Type: System.String) = user://steam/76561198293900031
+[INFO] [KKSavePoint] --- LocalStore Properties ---
+[INFO] [KKSavePoint] LS Property: SaveDir (Type: System.String) = user://steam/76561198293900031
+[INFO] [KKSavePoint] --- LocalStore Methods ---
+[INFO] [KKSavePoint] LS Method: get_SaveDir (Returns: System.String, Params: )
+[INFO] [KKSavePoint] LS Method: set_SaveDir (Returns: System.Void, Params: String value)
+[INFO] [KKSavePoint] LS Method: GetFullPath (Returns: System.String, Params: String filename)
+[INFO] [KKSavePoint] LS Method: ReadFile (Returns: System.String, Params: String path)
+[INFO] [KKSavePoint] LS Method: ReadFileAsync (Returns: System.Threading.Tasks.Task`1[System.String], Params: String path)
+[INFO] [KKSavePoint] LS Method: GetLastModifiedTime (Returns: System.DateTimeOffset, Params: String path)
+[INFO] [KKSavePoint] LS Method: GetFileSize (Returns: System.Int32, Params: String path)
+[INFO] [KKSavePoint] LS Method: SetLastModifiedTime (Returns: System.Void, Params: String path, DateTimeOffset time)
+[INFO] [KKSavePoint] LS Method: WriteFile (Returns: System.Void, Params: String path, String content)
+[INFO] [KKSavePoint] LS Method: WriteFile (Returns: System.Void, Params: String path, Byte[] bytes)
+[INFO] [KKSavePoint] LS Method: WriteFileAsync (Returns: System.Threading.Tasks.Task, Params: String path, String content)
+[INFO] [KKSavePoint] LS Method: WriteFileAsync (Returns: System.Threading.Tasks.Task, Params: String path, Byte[] bytes)
+[INFO] [KKSavePoint] LS Method: FileExists (Returns: System.Boolean, Params: String path)
+[INFO] [KKSavePoint] LS Method: DirectoryExists (Returns: System.Boolean, Params: String path)
+[INFO] [KKSavePoint] LS Method: DeleteFile (Returns: System.Void, Params: String path)
+[INFO] [KKSavePoint] LS Method: RenameFile (Returns: System.Void, Params: String sourcePath, String destinationPath)
+[INFO] [KKSavePoint] LS Method: GetFilesInDirectory (Returns: System.String[], Params: String directoryPath)
+[INFO] [KKSavePoint] LS Method: GetDirectoriesInDirectory (Returns: System.String[], Params: String directoryPath)
+[INFO] [KKSavePoint] LS Method: CreateDirectory (Returns: System.Void, Params: String directoryPath)
+[INFO] [KKSavePoint] LS Method: DeleteDirectory (Returns: System.Void, Params: String directoryPath)
+[INFO] [KKSavePoint] LS Method: DeleteTemporaryFiles (Returns: System.Void, Params: String directoryPath)
+[INFO] [KKSavePoint] LS Method: CopyBackup (Returns: System.Void, Params: String fullPath)
+[INFO] [KKSavePoint] LS Method: ValidateGodotFilePath (Returns: System.Void, Params: String godotFilePath)
+[INFO] [KKSavePoint] LS Method: GetType (Returns: System.Type, Params: )
+[INFO] [KKSavePoint] LS Method: MemberwiseClone (Returns: System.Object, Params: )
+[INFO] [KKSavePoint] LS Method: Finalize (Returns: System.Void, Params: )
+[INFO] [KKSavePoint] LS Method: ToString (Returns: System.String, Params: )
+[INFO] [KKSavePoint] LS Method: Equals (Returns: System.Boolean, Params: Object obj)
+[INFO] [KKSavePoint] LS Method: GetHashCode (Returns: System.Int32, Params: )
+[INFO] [KKSavePoint] Mod bootstrap starting.
+[INFO] [KKSavePoint] Settings file read from 'C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/kksavepoint_settings.json'.
+[INFO] [KKSavePoint] Settings initialized from 'C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/kksavepoint_settings.json': SavePoint=True
+[INFO] [KKSavePoint] Loaded settings: SavePoint=True
+[INFO] [KKSavePoint] NMultiplayerSubmenu methods: _Ready=True, OnSubmenuOpened=True
+[INFO] [KKSavePoint] Harmony patches applied with id 'kksavepoint.harmony'.
+[INFO] Finished mod initialization for 'KKSavePoint' (KKSavePoint).
+[INFO] Skipping loading mod QuickLink, it is set to disabled in settings
+[INFO] Skipping loading mod RemoveMultiplayerPlayerLimit, it is set to disabled in settings
+[INFO]  --- RUNNING MODDED! --- Loaded 2 mods (4 total)
+[INFO] Starting migration of legacy unscoped data to user-scoped directories
+[INFO] Skipping migration because C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1\saves already exists
+[INFO] No legacy replays directory found, skipping
+[INFO] No legacy console_history.log file found, skipping
+[INFO] No items were migrated (all destinations already existed)
+[INFO] Syncing cloud save files to the local save directory
+[WARN] Asset not cached: res://scenes/cards/card.tscn
+[WARN] Asset not cached: res://scenes/cards/holders/grid_card_holder.tscn
+[INFO] AtlasManager: Loaded ui_atlas with 102 sprites
+[INFO] AtlasManager: Loaded compressed with 45 sprites
+[INFO] Loading locale path=res://localization/eng
+[INFO] ModelIdSerializationCache initialized. Categories: 19 Entries: 1611 Epochs: 57 Hash: 1357847701
+[Sentry.GDExtension] Initialized: env=playtesters, release=v0.103.2
+[INFO] Profile-scoped data path initialized: user://steam/76561198293900031/modded/profile1
+[INFO] [Sentry.NET] Is running modded
+[INFO] [Sentry.NET] Shutting down because event reporting is disabled.
+[INFO] [Sentry.NET] Shutting down
+[Sentry.GDExtension] Shutting down
+[INFO] AtlasManager: Loaded controller_atlas with 112 sprites
+[INFO] Limiting background FPS to 30
+[INFO] Applying display settings...
+  FULLSCREEN: False
+  ASPECT_RATIO: (SixteenByNine)
+  TARGET_DISPLAY: (0)
+  WINDOW_SIZE: (976, 595)
+  POSITION: (572, 249)
+[INFO] [Display] Min size: (64, 64) Max size: (16384, 16384)
+[INFO] Window changed! New size: (1920, 1061)
+[INFO] [Display] Attempting WINDOWED mode on Display 1 of 1 at position (572, 249)
+[INFO] Restored foreground FPS
+[INFO] [Display] SUCCESS: (976, 595) Windowed mode in Display 0: Position (572, 249) ((572, 249))
+[INFO] Window changed! New size: (976, 595)
+[INFO] [Display] New size: (976, 595) position: (572, 249)
+[INFO] VSync: Off
+[INFO] SteamStatsManager: User stats received
+[INFO] SteamStatsManager: Global stats received (found=True), architect damage = 189916942500
+[INFO] Wrote 2748 bytes to path=user://steam/76561198293900031/settings.save save_dir=user://steam/76561198293900031
+[INFO] Wrote 2748 bytes to settings.save in steam remote store
+[INFO] === Godot OS Debug Information ===
+Timestamp: 05/07/2026 03:08:18
+OS: Windows
+OS Version: 10.0.19045
+Distribution Name: Windows
+Device Model: MS-7B89
+Is Debug Build: False
+Is Sandboxed: False
+Executable Path: C:/soft/steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.exe
+Data Directory: C:/Users/Marisa3/AppData/Roaming
+User Data Directory: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2
+Command Line Args: -debug
+User Command Line Args: 
+OS Locale: zh_CN
+OS Language: zh
+Game Locale: zh_CN
+Is UserFS Persistent: True
+Is Stdout Verbose: False
+Is Low Processor Usage Mode: False
+Architecture: x86_64
+Engine Version: 4.5.1-m.9 (custom_build)
+Is Editor: False
+Release Version: v0.103.2
+Release Commit: 89765e1e
+Release Date: 04/16/2026 21:53:23
+Processor Count: 16
+Processor Name: AMD Ryzen 7 3700X 8-Core Processor
+Main assembly hash: 1832700724
+Rendering device name: AMD Radeon RX 5700 XT
+  Graphics adapter 0: AMD Radeon RX 5700 XT
+  version: 32.0.21041.0
+  Graphics adapter 1: AMD Radeon RX 5700 XT
+  version: 32.0.21041.0
+  Graphics adapter 2: Microsoft Basic Render Driver
+  version: 10.0.19041.0
+Screen info (primary 0):
+  Index 0: Size: (1920, 1080) Orientation: Landscape Scale: 1 DPI: 96 Refresh Rate: 60
+Video Memory Used: 0.0B
+Memory Info:
+  physical: 63.9GB
+  free: 30.3GB
+  available: 69.1GB
+  stack: 8.0MB
+  Static Memory Usage: 0.0B
+  Static Memory Peak Usage: 0.0B
+Important Environment Variables:
+  PATH: C:\Program Files (x86)\Common Files\Intel\Shared Libraries\redist\intel64\compiler;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Users\Marisa3\.cargo\bin;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\nodejs\;C:\Program Files\NVIDIA Corporation\Nsight Compute 2024.2.1\;C:\Program Files\dotnet\;C:\Program Files\NVIDIA Corporation\NVIDIA app\NvDLISR;C:\Program Files\Techno-Speech\VoiSona\reporter;C:\Program Files\Bandizip\;C:\Program Files\Git\cmd;C:\Users\Marisa3\AppData\Local\Programs\Python\Python312\Scripts\;C:\Users\Marisa3\AppData\Local\Programs\Python\Python312\;C:\Users\Marisa3\AppData\Local\Microsoft\WindowsApps;C:\Users\Marisa3\AppData\Local\GitHubDesktop\bin;C:\Users\Marisa3\AppData\Local\Programs\Microsoft VS Code\bin;c:\users\marisa3\appdata\roaming\python\python312\scripts;c:\users\marisa3\.local\bin;C:\Users\Marisa3\AppData\Roaming\npm;C:\Users\Marisa3\AppData\Local\Microsoft\WindowsApps;C:\Users\Marisa3\.dotnet\tools;
+  GODOT_ROOT_DIR: 
+  HOME: 
+  DYLD_LIBRARY_PATH: 
+  LD_LIBRARY_PATH: 
+
+[INFO] Preloading 'IntroLogo' assets... count=3 vfx=0
+[INFO] Preloading 'IntroLogo' Complete: assets=3 time_elapsed=34ms
+[INFO] Preloading 'MainMenuEssentials' assets... count=5 vfx=0
+[INFO] Preloading 'MainMenuEssentials' Complete: assets=5 time_elapsed=257ms
+[WARN] Asset not cached: res://debug_audio/SOTE_Logo_Echoing_ShortTail.mp3
+[INFO] [Startup] Time to main menu (Godot ticks): 13972ms
+[WARN] Asset not cached: res://images/ui/top_panel/character_icon_ironclad.png
+[INFO] [KKSavePoint] NMainMenu._Ready postfix running.
+[INFO] [KKSavePoint] Main-menu settings button text applied.
+[INFO] [KKSavePoint] Added main-menu KKSavePoint settings button.
+[INFO] [KKSavePoint] NMainMenu._Ready called, checking auto-navigation...
+[INFO] [Startup] Time to main menu: 14,116ms
+[INFO] [Startup] Resource stats (main menu loaded (essential)): StaticMem=0B, VRAM=267.7MB, Objects=8,558, Resources=477, Nodes=1,670, CachedAssets=11
+[INFO] AtlasManager: Loaded epoch_atlas with 57 sprites
+[INFO] AtlasManager: Loaded relic_atlas with 341 sprites
+[INFO] AtlasManager: Loaded relic_outline_atlas with 341 sprites
+[INFO] AtlasManager: Loaded power_atlas with 266 sprites
+[INFO] AtlasManager: Loaded card_atlas with 864 sprites
+[INFO] AtlasManager: Loaded potion_atlas with 63 sprites
+[INFO] AtlasManager: Loaded potion_outline_atlas with 63 sprites
+[INFO] AtlasManager: Loaded stats_screen_atlas with 16 sprites
+[INFO] AtlasManager: Loaded intent_atlas with 310 sprites
+[INFO] AtlasManager: Loaded era_atlas with 27 sprites
+[INFO] Unloading 4 missed cache assets
+[INFO] Preloading 'Common' assets... count=683 vfx=86
+[INFO] [Startup] Resource stats (main menu loaded (complete)): StaticMem=0B, VRAM=463.3MB, Objects=8,532, Resources=474, Nodes=1,668, CachedAssets=5
+[INFO] Preloading 'Common' Complete: assets=769 time_elapsed=3,663ms
+[WARN] Asset not cached: res://scenes/screens/multiplayer_submenu.tscn
+[INFO] [KKSavePoint] NMultiplayerSubmenu.Postfix called, instance type: MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NMultiplayerSubmenu
+[INFO] [KKSavePoint] NMultiplayerSubmenu ready, checking flags: host=False, join=False
+[WARN] Warning: Packet writer is growing from 1024 bytes to 2048 bytes!
+[WARN] Warning: Packet writer is growing from 2048 bytes to 4096 bytes!
+[INFO] [SteamHost] Initializing Steam host. Our player id: 76561198293900031
+[INFO] Player connected: 76561198293900031
+[INFO] [KKSavePoint] Player 76561198293900031 connected, checking if host should auto ready...
+[INFO] [KKSavePoint] Host check. Players in save: 2, Connected players: 1
+[INFO] [KKSavePoint] Host waiting for all players to join... (1/2)
+[WARN] Asset not cached: res://scenes/ui/remote_lobby_player.tscn
+[INFO] Max ascension changed to 0
+[INFO] [KKSavePoint] NetService.Type: Host, NetId: 76561198293900031
+[INFO] [KKSavePoint] Player 76561198293900031 current ready state: False
+[INFO] [KKSavePoint] NMultiplayerLoadGameScreen detected - this is a continued game
+[INFO] [KKSavePoint] Host check. Players in save: 2, Connected players: 1
+[INFO] [KKSavePoint] Host waiting for all players to join... (1/2)
+[INFO] Limiting background FPS to 30
+[DEBUG] [SteamHost] Connection status changed: (76561198395836595: k_ESteamNetworkingConnectionState_None -> k_ESteamNetworkingConnectionState_Connecting
+[INFO] [SteamHost] Accepting new connection with user 76561198395836595
+[DEBUG] [SteamHost] Connection status changed: (76561198395836595: k_ESteamNetworkingConnectionState_Connecting -> k_ESteamNetworkingConnectionState_FindingRoute
+[DEBUG] [SteamHost] Connection status changed: (76561198395836595: k_ESteamNetworkingConnectionState_FindingRoute -> k_ESteamNetworkingConnectionState_Connected
+[INFO] [Lobby (76561198293900031)] Client 76561198395836595 connected. Sending initial game info message
+[INFO] [NetMessageBus] Received message MegaCrit.Sts2.Core.Multiplayer.Messages.Lobby.ClientLoadJoinRequestMessage, sending to 1 handlers
+[INFO] [Lobby (76561198293900031)] Received ClientLoadJoinRequestMessage for 76561198395836595
+[INFO] Player connected: 76561198395836595
+[INFO] [KKSavePoint] Player 76561198395836595 connected, checking if host should auto ready...
+[INFO] [KKSavePoint] Host check. Players in save: 2, Connected players: 2
+[INFO] [KKSavePoint] All players joined, host auto setting ready...
+[INFO] Player ready changed: 76561198293900031
+[INFO] [Lobby (76561198293900031)] Local player 76561198293900031 is ready
+[INFO] [KKSavePoint] Host auto ready completed. GameMode: Standard
+[DEBUG] [Lobby (76561198293900031)] Sending ClientLoadJoinResponseMessage to 76561198395836595
+[WARN] Warning: Packet writer is growing from 1024 bytes to 2048 bytes!
+[WARN] Warning: Packet writer is growing from 2048 bytes to 4096 bytes!
+[DEBUG] [Lobby (76561198293900031)] Received LobbyPlayerSetReadyMessage for player 76561198395836595 with value True
+[INFO] Player ready changed: 76561198395836595
+[INFO] Loading a multiplayer run. Players: 76561198293900031,76561198395836595.
+[WARN] Asset not cached: res://scenes/ui/multiplayer/remote_mouse_cursor.tscn
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.RequestEnqueueActionMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.RequestEnqueueActionMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.ActionEnqueuedMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.ActionEnqueuedMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.RequestEnqueueHookActionMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.RequestEnqueueHookActionMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.HookActionEnqueuedMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.HookActionEnqueuedMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.RequestResumeActionAfterPlayerChoiceMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.RequestResumeActionAfterPlayerChoiceMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.ResumeActionAfterPlayerChoiceMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.ResumeActionAfterPlayerChoiceMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.OptionIndexChosenMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.OptionIndexChosenMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.VotedForSharedEventOptionMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.VotedForSharedEventOptionMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.SharedEventOptionChosenMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.SharedEventOptionChosenMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.RewardObtainedMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.RewardObtainedMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.GoldLostMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.GoldLostMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.CardRemovedMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.CardRemovedMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.PaelsWingSacrificeMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.PaelsWingSacrificeMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.OptionIndexChosenMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync.OptionIndexChosenMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Flavor.RestSiteOptionHoveredMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Flavor.RestSiteOptionHoveredMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.MerchantCardRemovalMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.MerchantCardRemovalMessage
+[VERYDEBUG] [RunLocationTargetedMessageBuffer] Register message handler MegaCrit.Sts2.Core.Multiplayer.Game.MessageHandlerDelegate`1[MegaCrit.Sts2.Core.Multiplayer.Messages.Game.TreasureChestOpenedMessage] for MegaCrit.Sts2.Core.Multiplayer.Messages.Game.TreasureChestOpenedMessage
+[DEBUG] [ActionExecutor] Pausing queue
+[DEBUG] [RunLocationTargetedMessageBuffer] Run location changed to act 0 coord (6, 1) room  (previously at: act 0 coord (null) room ), checking if we have enqueued messages
+[INFO] Preloading 'characters=IRONCLAD,IRONCLAD' assets... count=9 vfx=9
+[INFO] Restored foreground FPS
+[INFO] Preloading 'characters=IRONCLAD,IRONCLAD' Complete: assets=18 time_elapsed=1,276ms
+[INFO] Preloading 'Act=UNDERDOCKS' assets... count=8 vfx=0
+[INFO] Preloading 'Act=UNDERDOCKS' Complete: assets=8 time_elapsed=51ms
+[INFO] [KKSavePoint] Loaded 1884 save points from file.
+[INFO] [KKSavePoint] SavePoint initialized. File: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/kksavepoint_savepoints.json, Dir: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/savepoints
+[INFO] [KKSavePoint] Added SavePoint button to top bar.
+[WARN] Asset not cached: res://images/packed/run_history/attack_portrait.png
+[WARN] Asset not cached: res://images/packed/run_history/attack_portrait_shadow.png
+[WARN] Asset not cached: res://images/ui/top_panel/character_icon_ironclad_outline.png
+[DEBUG] [CombatStateSynchronizer] Broadcasting combat sync message to all peers
+[DEBUG] [CombatStateSynchronizer] Waiting to receive all sync messages from all clients
+[DEBUG] [CombatStateSynchronizer] Received sync player message from 76561198395836595
+[DEBUG] [ActionExecutor] Pausing queue
+[INFO] Preloading 'Combat Room' assets... count=9 vfx=0
+[INFO] Preloading 'Combat Room' Complete: assets=9 time_elapsed=51ms
+[INFO] Creating NCombatRoom with mode=ActiveCombat encounter=TOADPOLES_WEAK.
+[WARN] Asset not cached: res://scenes/combat/multiplayer_player_intent.tscn
+[WARN] Asset not cached: res://materials/vfx/hsv.tres
+[WARN] [sts2.piyixiajiuhenfen.speedx] [TurboGuard] Real multiplayer detected; risky multiplayer timer override is ON. Allowing gameplay timer acceleration and risking desync if player mods/settings differ.
+[INFO] [KKSavePoint] SetUpCombat called, _turnRecordLoadCount = 0
+[INFO] [KKSavePoint] Clearing turn records in SetUpCombat (new combat)
+[INFO] [KKSavePoint] ClearTurnRecords called, clearing 0 turn records and 0 playback data
+[INFO] [KKSavePoint] ClearTurnRecords complete
+[INFO] [KKSavePoint] Using RunSaveManager.CurrentMultiplayerRunSavePath: 
+[INFO] [KKSavePoint] SaveDir: user://steam/76561198293900031
+[INFO] [KKSavePoint] User Data Directory: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2
+[INFO] [KKSavePoint] Found current profile ID: 1
+[INFO] [KKSavePoint] Full save path: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1/saves/current_run_mp.save
+[INFO] [KKSavePoint] Using game save path: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1/saves/current_run_mp.save
+[INFO] [KKSavePoint] Using save file: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1/saves/current_run_mp.save
+[INFO] [KKSavePoint] Skipping duplicate save point.
+[DEBUG] [ActionExecutor] Pausing queue
+[DEBUG] [ActionQueueSynchronizer] Combat state was previously NotInCombat. Signaling queues that combat has begun
+[DEBUG] [ActionQueueSet] Combat started.
+[DEBUG] [ActionQueueSynchronizer] Combat state becomes NotPlayPhase. Pausing all player queues
+[DEBUG] [ActionQueueSet] Pausing all player queues
+[DEBUG] [ActionExecutor] Action queue changed, beginning ExecuteActions
+[VERYDEBUG] [ActionQueueSet] Attempting to find ready action
+[VERYDEBUG] [ActionQueueSet] Queue for player 76561198293900031 is empty
+[VERYDEBUG] [ActionQueueSet] Queue for player 76561198395836595 is empty
+[VERYDEBUG] [ActionQueueSet] No action is ready
+[DEBUG] [RunLocationTargetedMessageBuffer] Run location changed to act 0 coord (6, 1) room 0 (previously at: act 0 coord (6, 1) room ), checking if we have enqueued messages
+[DEBUG] [RunLocationTargetedMessageBuffer] Run location changed to act 0 coord (6, 1) room 0 (previously at: act 0 coord (6, 1) room 0), checking if we have enqueued messages
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: STRIKE_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: STRIKE_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: STRIKE_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: DEFEND_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: DEFEND_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] Turn start recorded: HP 80, Block 0
+[INFO] [KKSavePoint] Turn start recorded: HP 80, Block 0
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: STRIKE_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: PERFECTED_STRIKE, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: DEFEND_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: BASH, oldPile: Draw
+[INFO] [KKSavePoint] AfterCardChangedPiles - Card moved from Draw: DEFEND_IRONCLAD, oldPile: Draw
+[INFO] [KKSavePoint] Turn start recorded: HP 80, Block 0
+[INFO] [KKSavePoint] Turn start recorded: HP 80, Block 0
+[DEBUG] [ChecksumTracker] Generating checksum for context: After player turn start action:  id: 0
+[DEBUG] [ActionExecutor] Un-pausing queue
+[DEBUG] [ActionQueueSynchronizer] Combat state becomes PlayPhase. Requesting 0 actions and unpausing action queues
+[DEBUG] [ActionQueueSet] Unpausing all player queues
+[DEBUG] [ActionExecutor] Action queue changed, beginning ExecuteActions
+[VERYDEBUG] [ActionQueueSet] Attempting to find ready action
+[VERYDEBUG] [ActionQueueSet] Queue for player 76561198293900031 is empty
+[VERYDEBUG] [ActionQueueSet] Queue for player 76561198395836595 is empty
+[VERYDEBUG] [ActionQueueSet] No action is ready
+[INFO] [KKSavePoint] OnTurnStarted called - CurrentSide: Player, RoundNumber: 1
+[INFO] [KKSavePoint] Player turn detected - Round 1
+[INFO] [KKSavePoint] Recording turn save point - Room: Combat, Floor: 0, Turn: 1
+[INFO] [KKSavePoint] SavePoint button pressed.
+[INFO] [KKSavePoint] Executing delayed RecordTurnSavePoint for Turn: 1
+[INFO] [KKSavePoint] SaveDir: user://steam/76561198293900031
+[INFO] [KKSavePoint] User Data Directory: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2
+[INFO] [KKSavePoint] Found current profile ID: 1
+[INFO] [KKSavePoint] Full save path: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1/saves/current_run_mp.save
+[INFO] [KKSavePoint] Saving turn record for Turn 1
+[INFO] [KKSavePoint] Copied save to: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/savepoints\turnsavepoint_20260507_030858_3474482254294eb5aca958e6af88abb7.json
+[INFO] [KKSavePoint] Host player confirmed, proceeding with rollback...
+[INFO] [KKSavePoint] Loading save point: Combat
+[INFO] [KKSavePoint] SavePoint feedback: Loading: Combat
+[INFO] [KKSavePoint] Loading: Combat
+[WARN] Asset not cached: res://scenes/vfx/vfx_fullscreen_text.tscn
+[INFO] [KKSavePoint] SaveDir: user://steam/76561198293900031
+[INFO] [KKSavePoint] User Data Directory: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2
+[INFO] [KKSavePoint] Found current profile ID: 1
+[INFO] [KKSavePoint] Full save path: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1/saves/current_run_mp.save
+[INFO] [KKSavePoint] Using game save path: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1/saves/current_run_mp.save
+[INFO] [KKSavePoint] Copying save point to: C:/Users/Marisa3/AppData/Roaming/SlayTheSpire2/steam/76561198293900031/modded/profile1/saves/current_run_mp.save
+[INFO] [KKSavePoint] Multiplayer mode detected, preparing to return to menu and auto navigate...
+[INFO] [KKSavePoint] NetService retrieved from RunManager
+[INFO] [KKSavePoint] Detected network role: Host
+[INFO] [KKSavePoint] NetService retrieved from RunManager
+[WARN] [KKSavePoint] Cannot register InitialGameInfoMessage handler: RegisterMessageHandler method not found
+[INFO] [KKSavePoint] Multiplayer rollback system initialized. Role: Host=True, Client=False
+[INFO] [KKSavePoint] Host: Saving save data and sending rollback notification to clients...
+[INFO] [KKSavePoint] SavePoint feedback: 正在发送回档通知给客机...
+[INFO] [KKSavePoint] Rollback notification sent to clients with special seed
+[INFO] [KKSavePoint] Host: Save data prepared and rollback notification sent, returning to menu...
+[INFO] [KKSavePoint] SavePoint feedback: 正在返回主菜单，准备重新加载房间...
+[INFO] [KKSavePoint] ScheduleAutoNavigateToMultiplayer called, will auto-navigate when NMainMenu._Ready
+[INFO] [KKSavePoint] Disconnecting Steam connection before returning to menu...
+[INFO] [KKSavePoint] Found 1 Disconnect method(s):
+[INFO] [KKSavePoint]   - Disconnect(NetError, Boolean) : Void
+[INFO] [KKSavePoint] Param 0: Type=MegaCrit.Sts2.Core.Entities.Multiplayer.NetError
+[INFO] [KKSavePoint]   - Set to Quit
+[INFO] [KKSavePoint] Param 1: Type=System.Boolean
+[INFO] [KKSavePoint]   - Set to true
+[INFO] [KKSavePoint] Calling Disconnect(Quit, True)...
+[DEBUG] [SteamHost] Stopping host
+[INFO] [RunLobby] Disconnected. Reason: Quit
+[INFO] [KKSavePoint] Successfully disconnected Steam connection
+[INFO] [KKSavePoint] CloseToMenu: Preparing to return to main menu...
+[INFO] [KKSavePoint] CloseToMenu: Calling NGame.Instance.ReturnToMainMenu()...
+[INFO] [KKSavePoint] CloseToMenu: Successfully called ReturnToMainMenu
+[INFO] [KKSavePoint] 正在发送回档通知给客机...
+[INFO] [KKSavePoint] 正在返回主菜单，准备重新加载房间...
+[INFO] Unloading 9 missed cache assets
+[INFO] Preloading 'Common' assets... count=125 vfx=1
+[DEBUG] [ActionExecutor] Action queue changed, beginning ExecuteActions
+[VERYDEBUG] [ActionQueueSet] Attempting to find ready action
+[VERYDEBUG] [ActionQueueSet] No action is ready
+[DEBUG] [ActionQueueSynchronizer] Combat state becomes NotInCombat. Cancelling deferred actions and cancelling all remaining combat actions
+[DEBUG] [ActionQueueSet] Combat ended. Cancelling all non-executing combat actions in all queues
+[DEBUG] [ActionExecutor] Action queue changed, beginning ExecuteActions
+[VERYDEBUG] [ActionQueueSet] Attempting to find ready action
+[VERYDEBUG] [ActionQueueSet] No action is ready
+[DEBUG] [ActionQueueSet] Unpausing all player queues
+[DEBUG] [ActionExecutor] Action queue changed, beginning ExecuteActions
+[VERYDEBUG] [ActionQueueSet] Attempting to find ready action
+[VERYDEBUG] [ActionQueueSet] No action is ready
+[WARN] Asset not cached: res://scenes/screens/main_menu.tscn
+[INFO] [Startup] Time to main menu (Godot ticks): 45818ms
+[INFO] [KKSavePoint] NMainMenu._Ready postfix running.
+[INFO] [KKSavePoint] Main-menu settings button text applied.
+[INFO] [KKSavePoint] Added main-menu KKSavePoint settings button.
+[INFO] [KKSavePoint] NMainMenu._Ready called, checking auto-navigation...
+[INFO] [KKSavePoint] Rollback return detected, using AutoNavigateFromMainMenu...
+[INFO] [KKSavePoint] NMainMenu auto navigate, checking flags: host=True, join=False
+[INFO] [KKSavePoint] Auto clicking multiplayer button...
+[INFO] [KKSavePoint] Calling ForceClick on _multiplayerButton...
+[WARN] Asset not cached: res://scenes/screens/multiplayer_submenu.tscn
+[INFO] [KKSavePoint] NMultiplayerSubmenu.Postfix called, instance type: MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NMultiplayerSubmenu
+[INFO] [KKSavePoint] NMultiplayerSubmenu ready, checking flags: host=True, join=False
+[INFO] [KKSavePoint] Scheduling delayed click on load button (waiting for menu transition)...
+[INFO] [KKSavePoint] Successfully clicked _multiplayerButton!
+[INFO] Preloading 'Common' assets... count=125 vfx=1
+[INFO] [Startup] Time to main menu (Godot ticks): 45929ms
+[INFO] [KKSavePoint] NMainMenu._Ready postfix running.
+[INFO] [KKSavePoint] Main-menu settings button text applied.
+[INFO] [KKSavePoint] Added main-menu KKSavePoint settings button.
+[INFO] [KKSavePoint] NMainMenu._Ready called, checking auto-navigation...
+[INFO] Preloading 'Common' Complete: assets=125 time_elapsed=946ms
+[INFO] Preloading 'Common' Complete: assets=0 time_elapsed=791ms
+[KKSavePoint] Delay complete, now clicking load button...
+[INFO] [KKSavePoint] SubmenuStack type: MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NMainMenuSubmenuStack
+[INFO] [KKSavePoint] SubmenuStack fields: 24
+[INFO] [KKSavePoint]  - _settingsScreenScene: PackedScene
+[INFO] [KKSavePoint]  - _characterSelectScreenScene: PackedScene
+[INFO] [KKSavePoint]  - _singleplayerSubmenu: NSingleplayerSubmenu
+[INFO] [KKSavePoint]  - _multiplayerSubmenu: NMultiplayerSubmenu
+[INFO] [KKSavePoint]  - _multiplayerHostSubmenu: NMultiplayerHostSubmenu
+[INFO] [KKSavePoint]  - _joinFriendSubmenu: NJoinFriendScreen
+[INFO] [KKSavePoint]  - _characterSelectSubmenu: NCharacterSelectScreen
+[INFO] [KKSavePoint]  - _loadMultiplayerSubmenu: NMultiplayerLoadGameScreen
+[INFO] [KKSavePoint]  - _compendiumSubmenu: NCompendiumSubmenu
+[INFO] [KKSavePoint]  - _bestiarySubmenu: NBestiary
+[INFO] [KKSavePoint]  - _relicCollectionSubmenu: NRelicCollection
+[INFO] [KKSavePoint]  - _potionLabSubmenu: NPotionLab
+[INFO] [KKSavePoint]  - _cardLibrarySubmenu: NCardLibrary
+[INFO] [KKSavePoint]  - _runHistorySubmenu: NRunHistory
+[INFO] [KKSavePoint]  - _statsScreen: NStatsScreen
+[INFO] [KKSavePoint]  - _timelineScreen: NTimelineScreen
+[INFO] [KKSavePoint]  - _settingsScreen: NSettingsScreen
+[INFO] [KKSavePoint]  - _dailyScreen: NDailyRunScreen
+[INFO] [KKSavePoint]  - _dailyLoadScreen: NDailyRunLoadScreen
+[INFO] [KKSavePoint]  - _customRunScreen: NCustomRunScreen
+[INFO] [KKSavePoint]  - _customRunLoadScreen: NCustomRunLoadScreen
+[INFO] [KKSavePoint]  - _moddingScreen: NModdingScreen
+[INFO] [KKSavePoint]  - _profileScreen: NProfileScreen
+[INFO] [KKSavePoint]  - NativePtr: IntPtr
+[INFO] [KKSavePoint] SubmenuStack properties: 83
+[INFO] [KKSavePoint]  - SubmenusOpen: Boolean
+[INFO] [KKSavePoint]  - ClipContents: Boolean
+[INFO] [KKSavePoint]  - CustomMinimumSize: Vector2
+[INFO] [KKSavePoint]  - LayoutDirection: LayoutDirectionEnum
+[INFO] [KKSavePoint]  - LayoutMode: Int32
+[INFO] [KKSavePoint]  - AnchorsPreset: Int32
+[INFO] [KKSavePoint]  - AnchorLeft: Single
+[INFO] [KKSavePoint]  - AnchorTop: Single
+[INFO] [KKSavePoint]  - AnchorRight: Single
+[INFO] [KKSavePoint]  - AnchorBottom: Single
+[INFO] [KKSavePoint]  - OffsetLeft: Single
+[INFO] [KKSavePoint]  - OffsetTop: Single
+[INFO] [KKSavePoint]  - OffsetRight: Single
+[INFO] [KKSavePoint]  - OffsetBottom: Single
+[INFO] [KKSavePoint]  - GrowHorizontal: GrowDirection
+[INFO] [KKSavePoint]  - GrowVertical: GrowDirection
+[INFO] [KKSavePoint]  - Size: Vector2
+[INFO] [KKSavePoint]  - Position: Vector2
+[INFO] [KKSavePoint]  - GlobalPosition: Vector2
+[INFO] [KKSavePoint]  - Rotation: Single
+[INFO] [KKSavePoint]  - RotationDegrees: Single
+[INFO] [KKSavePoint]  - Scale: Vector2
+[INFO] [KKSavePoint]  - PivotOffset: Vector2
+[INFO] [KKSavePoint]  - SizeFlagsHorizontal: SizeFlags
+[INFO] [KKSavePoint]  - SizeFlagsVertical: SizeFlags
+[INFO] [KKSavePoint]  - SizeFlagsStretchRatio: Single
+[INFO] [KKSavePoint]  - LocalizeNumeralSystem: Boolean
+[INFO] [KKSavePoint]  - AutoTranslate: Boolean
+[INFO] [KKSavePoint]  - TooltipText: String
+[INFO] [KKSavePoint]  - TooltipAutoTranslateMode: AutoTranslateModeEnum
+[INFO] [KKSavePoint]  - FocusNeighborLeft: NodePath
+[INFO] [KKSavePoint]  - FocusNeighborTop: NodePath
+[INFO] [KKSavePoint]  - FocusNeighborRight: NodePath
+[INFO] [KKSavePoint]  - FocusNeighborBottom: NodePath
+[INFO] [KKSavePoint]  - FocusNext: NodePath
+[INFO] [KKSavePoint]  - FocusPrevious: NodePath
+[INFO] [KKSavePoint]  - FocusMode: FocusModeEnum
+[INFO] [KKSavePoint]  - FocusBehaviorRecursive: FocusBehaviorRecursiveEnum
+[INFO] [KKSavePoint]  - MouseFilter: MouseFilterEnum
+[INFO] [KKSavePoint]  - MouseBehaviorRecursive: MouseBehaviorRecursiveEnum
+[INFO] [KKSavePoint]  - MouseForcePassScrollEvents: Boolean
+[INFO] [KKSavePoint]  - MouseDefaultCursorShape: CursorShape
+[INFO] [KKSavePoint]  - ShortcutContext: Node
+[INFO] [KKSavePoint]  - AccessibilityName: String
+[INFO] [KKSavePoint]  - AccessibilityDescription: String
+[INFO] [KKSavePoint]  - AccessibilityLive: AccessibilityLiveMode
+[INFO] [KKSavePoint]  - AccessibilityControlsNodes: Array`1
+[INFO] [KKSavePoint]  - AccessibilityDescribedByNodes: Array`1
+[INFO] [KKSavePoint]  - AccessibilityLabeledByNodes: Array`1
+[INFO] [KKSavePoint]  - AccessibilityFlowToNodes: Array`1
+[INFO] [KKSavePoint]  - Theme: Theme
+[INFO] [KKSavePoint]  - ThemeTypeVariation: StringName
+[INFO] [KKSavePoint]  - Visible: Boolean
+[INFO] [KKSavePoint]  - Modulate: Color
+[INFO] [KKSavePoint]  - SelfModulate: Color
+[INFO] [KKSavePoint]  - ShowBehindParent: Boolean
+[INFO] [KKSavePoint]  - TopLevel: Boolean
+[INFO] [KKSavePoint]  - ClipChildren: ClipChildrenMode
+[INFO] [KKSavePoint]  - LightMask: Int32
+[INFO] [KKSavePoint]  - VisibilityLayer: UInt32
+[INFO] [KKSavePoint]  - ZIndex: Int32
+[INFO] [KKSavePoint]  - ZAsRelative: Boolean
+[INFO] [KKSavePoint]  - YSortEnabled: Boolean
+[INFO] [KKSavePoint]  - TextureFilter: TextureFilterEnum
+[INFO] [KKSavePoint]  - TextureRepeat: TextureRepeatEnum
+[INFO] [KKSavePoint]  - Material: Material
+[INFO] [KKSavePoint]  - UseParentMaterial: Boolean
+[INFO] [KKSavePoint]  - _ImportPath: NodePath
+[INFO] [KKSavePoint]  - Name: StringName
+[INFO] [KKSavePoint]  - UniqueNameInOwner: Boolean
+[INFO] [KKSavePoint]  - SceneFilePath: String
+[INFO] [KKSavePoint]  - Owner: Node
+[INFO] [KKSavePoint]  - Multiplayer: MultiplayerApi
+[INFO] [KKSavePoint]  - ProcessMode: ProcessModeEnum
+[INFO] [KKSavePoint]  - ProcessPriority: Int32
+[INFO] [KKSavePoint]  - ProcessPhysicsPriority: Int32
+[INFO] [KKSavePoint]  - ProcessThreadGroup: ProcessThreadGroupEnum
+[INFO] [KKSavePoint]  - ProcessThreadGroupOrder: Int32
+[INFO] [KKSavePoint]  - ProcessThreadMessages: ProcessThreadMessagesEnum
+[INFO] [KKSavePoint]  - PhysicsInterpolationMode: PhysicsInterpolationModeEnum
+[INFO] [KKSavePoint]  - AutoTranslateMode: AutoTranslateModeEnum
+[INFO] [KKSavePoint]  - EditorDescription: String
+[INFO] [KKSavePoint]  - NativeInstance: IntPtr
+[INFO] NGame.Quit called
+[INFO] [Display] On exit, saving window size: (976, 595) display: 0 position: (572, 249)
+[INFO] Wrote 2748 bytes to path=user://steam/76561198293900031/settings.save save_dir=user://steam/76561198293900031
+[INFO] Wrote 2748 bytes to settings.save in steam remote store
+[INFO] Wrote 298 bytes to path=user://steam/76561198293900031/modded/profile1\saves\prefs.save save_dir=user://steam/76561198293900031
+[INFO] Wrote 298 bytes to modded/profile1/saves/prefs.save in steam remote store
+[INFO] Wrote 236096 bytes to path=user://steam/76561198293900031/modded/profile1\saves\progress.save save_dir=user://steam/76561198293900031
+[INFO] Wrote 236096 bytes to modded/profile1/saves/progress.save in steam remote store
+[INFO] Wrote 52 bytes to path=user://steam/76561198293900031/profile.save save_dir=user://steam/76561198293900031
+[INFO] Wrote 52 bytes to profile.save in steam remote store
+[INFO] Steamworks: shutting down...
+[INFO] Steamworks shutdown succeeded!
+FMOD Sound System: System released
+WARNING: 885 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2678)
+ERROR: 1 RID allocations of type 'N26RendererEnvironmentStorage11EnvironmentE' were leaked at exit.
+ERROR: 5 shaders of type CanvasShaderRD were never freed
+   at: ~ShaderRD (servers/rendering/renderer_rd/shader_rd.cpp:1044)
+ERROR: 25 RID allocations of type 'N10RendererRD16ParticlesStorage9ParticlesE' were leaked at exit.
+ERROR: 1 shaders of type ParticlesShaderRD were never freed
+   at: ~ShaderRD (servers/rendering/renderer_rd/shader_rd.cpp:1044)
+ERROR: 25 RID allocations of type 'N10RendererRD11MeshStorage4MeshE' were leaked at exit.
+ERROR: 105 RID allocations of type 'N10RendererRD15MaterialStorage8MaterialE' were leaked at exit.
+ERROR: 6 RID allocations of type 'N10RendererRD15MaterialStorage6ShaderE' were leaked at exit.
+ERROR: 29 RID allocations of type 'N10RendererRD14TextureStorage7TextureE' were leaked at exit.
+WARNING: 205 RIDs of type "UniformBuffer" were leaked.
+   at: _free_rids (servers/rendering/rendering_device.cpp:6981)
+WARNING: 50 RIDs of type "Texture" were leaked.
+   at: finalize (servers/rendering/rendering_device.cpp:7191)
+ERROR: 300 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 3 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
+ERROR: 4 RID allocations of type 'PN18TextServerAdvanced27FontAdvancedLinkedVariationE' were leaked at exit.
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2514)
+ERROR: 65 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:795)
