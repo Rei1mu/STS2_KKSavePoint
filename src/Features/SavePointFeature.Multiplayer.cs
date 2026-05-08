@@ -16,6 +16,8 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using MegaCrit.Sts2.Core.Nodes.Ftue;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Platform;
@@ -390,7 +392,7 @@ public partial class SavePointFeature
                 var disconnectMethods = netService.GetType().GetMethods(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public)
                     .Where(m => m.Name == "Disconnect")
                     .ToArray();
-                
+
                 if (disconnectMethods.Length > 0)
                 {
                     Log.Info($"[KKSavePoint] Found {disconnectMethods.Length} Disconnect method(s):");
@@ -399,7 +401,7 @@ public partial class SavePointFeature
                         var paramsDesc = string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name));
                         Log.Info($"[KKSavePoint]   - {method.Name}({paramsDesc}) : {method.ReturnType.Name}");
                     }
-                    
+
                     var noParamMethod = disconnectMethods.FirstOrDefault(m => m.GetParameters().Length == 0);
                     if (noParamMethod != null)
                     {
@@ -681,7 +683,7 @@ public partial class SavePointFeature
         {
             Log.Info("[KKSavePoint] NMainMenu._Ready called, checking auto-navigation...");
             Log.Info($"[KKSavePoint] Flags: _shouldHost={_shouldHost}, _shouldJoin={_shouldJoin}");
-            
+
             if (_shouldHost)
             {
                 AutoEnterHostFromSaveOnGameStart(__instance);
@@ -909,16 +911,16 @@ public partial class SavePointFeature
                 else if (_shouldJoin)
                 {
                     Log.Info("[KKSavePoint] Auto navigating to Join...");
-                    var joinButtonMethod = __instance.GetType().GetMethod("OnJoinFriendsPressed", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    if (joinButtonMethod != null)
-                    {
-                        joinButtonMethod.Invoke(__instance, null);
-                        Log.Info("[KKSavePoint] Successfully called OnJoinFriendsPressed!");
-                    }
-                    else
-                    {
-                        Log.Warn("[KKSavePoint] OnJoinFriendsPressed method not found!");
-                    }
+                    // var joinButtonMethod = __instance.GetType().GetMethod("OnJoinFriendsPressed", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    // if (joinButtonMethod != null)
+                    // {
+                    //     joinButtonMethod.Invoke(__instance, null);
+                    //     Log.Info("[KKSavePoint] Successfully called OnJoinFriendsPressed!");
+                    // }
+                    // else
+                    // {
+                    //     Log.Warn("[KKSavePoint] OnJoinFriendsPressed method not found!");
+                    // }
 
                     _shouldJoin = false;  // 清除 join 标志
                 }
@@ -927,7 +929,7 @@ public partial class SavePointFeature
             {
                 _shouldHost = false;  // 出错时也要清除标志
                 _shouldJoin = false;
-                Log.Error($"[KKSavePoint] Error in NMultiplayerSubmenuPatch.Postfix: {ex}");
+                Log.Info($"[KKSavePoint] havent loaded NMultiplayerSubmenu assets ");
             }
         }
     }
@@ -997,28 +999,19 @@ public partial class SavePointFeature
             if (loadButtonField != null)
             {
                 var loadButton = loadButtonField.GetValue(instance);
+                Log.Info($"[KKSavePoint]  loadButtonField.FieldHandle: {loadButtonField.FieldHandle}");
                 if (loadButton != null)
                 {
-                    var emitSignalMethod = loadButton.GetType().GetMethod("EmitSignal", new Type[] { typeof(StringName) });
-                    if (emitSignalMethod != null)
+                    var forceClickMethod = loadButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public);
+                    if (forceClickMethod != null)
                     {
-                        Log.Info("[KKSavePoint] Emitting Released signal on _loadButton...");
-                        emitSignalMethod.Invoke(loadButton, new object[] { NClickableControl.SignalName.Released });
-                        Log.Info("[KKSavePoint] Successfully emitted Released signal on _loadButton!");
+                        Log.Info("[KKSavePoint] Calling ForceClick on _loadButton...");
+                        forceClickMethod.Invoke(loadButton, null);
+                        Log.Info("[KKSavePoint] Successfully clicked _loadButton!");
                     }
                     else
                     {
-                        var forceClickMethod = loadButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public);
-                        if (forceClickMethod != null)
-                        {
-                            Log.Info("[KKSavePoint] Calling ForceClick on _loadButton...");
-                            forceClickMethod.Invoke(loadButton, null);
-                            Log.Info("[KKSavePoint] Successfully clicked _loadButton!");
-                        }
-                        else
-                        {
-                            Log.Warn("[KKSavePoint] Neither EmitSignal nor ForceClick method found on _loadButton");
-                        }
+                        Log.Warn("[KKSavePoint] Neither EmitSignal nor ForceClick method found on _loadButton");
                     }
                 }
                 else
@@ -1155,6 +1148,63 @@ public partial class SavePointFeature
             catch (Exception ex)
             {
                 Log.Error($"[KKSavePoint] Error in NJoinFriendScreenOnSubmenuOpenedPatch: {ex}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(NFtueConfirmButton), "_Ready")]
+    public class NFtueConfirmButtonPatch
+    {
+        private static async void Postfix(NFtueConfirmButton __instance)
+        {
+            // 等待一帧确保按钮完全初始化
+            await __instance.ToSignal(__instance.GetTree(), "process_frame");
+
+            if (GodotObject.IsInstanceValid(__instance))
+            {
+                Log.Info("[KKSavePoint] Auto-clicking FTUE confirm button...");
+                __instance.ForceClick();
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(NErrorPopup), "_Ready")]
+    public class NErrorPopupPatch
+    {
+        private static async void Postfix(NErrorPopup __instance)
+        {
+            Log.Info("[KKSavePoint] NErrorPopup _Ready called!");
+            // 等待一帧确保弹窗完全初始化
+            await __instance.ToSignal(__instance.GetTree(), "process_frame");
+
+            if (GodotObject.IsInstanceValid(__instance))
+            {
+                Log.Info($"[KKSavePoint] NErrorPopup __instance");
+                // 获取 _body 字段的值
+                var bodyField = __instance.GetType().GetField("_body", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (bodyField != null)
+                {
+                    string body = (string)bodyField.GetValue(__instance);
+                    Log.Info($"[KKSavePoint] NErrorPopup bodyField: {bodyField},{body},{bodyField}");
+                    // 检查是否是 NETWORK_ERROR.QUIT.body 错误
+                    if (body != null )
+                    {//&& body.Contains("Host left the game")
+                        Log.Info("[KKSavePoint] Detected NETWORK_ERROR.QUIT.body popup, auto-clicking OK button...");
+
+                        // 获取 _verticalPopup 字段
+                        var verticalPopupField = __instance.GetType().GetField("_verticalPopup", BindingFlags.Instance | BindingFlags.NonPublic);
+                        if (verticalPopupField != null)
+                        {
+                            var verticalPopup = (NVerticalPopup)verticalPopupField.GetValue(__instance);
+                            if (verticalPopup != null && GodotObject.IsInstanceValid(verticalPopup))
+                            {
+                                // 获取 YesButton 并点击
+                                verticalPopup.YesButton.ForceClick();
+                                Log.Info("[KKSavePoint] Successfully auto-clicked OK button on NETWORK_ERROR.QUIT popup!");
+                            }
+                        }
+                    }
+                }
             }
         }
     }
