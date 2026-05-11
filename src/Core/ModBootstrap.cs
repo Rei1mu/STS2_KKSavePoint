@@ -1,4 +1,5 @@
 using HarmonyLib;
+using KKSavePoint.src.Features;
 using MegaCrit.Sts2.Core.Logging;
 
 namespace KKSavePoint.Core;
@@ -26,6 +27,10 @@ public static class ModBootstrap
 
         _harmony = new Harmony(HarmonyId);
         _harmony.PatchAll();
+        
+        // Apply NErrorPopup auto-handler patches
+        NErrorPopupHandler.ApplyPatches(_harmony);
+        
         Log.Info($"[KKSavePoint] Harmony patches applied with id '{HarmonyId}'.");
     }
 }

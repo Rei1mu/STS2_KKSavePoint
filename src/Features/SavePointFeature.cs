@@ -31,13 +31,14 @@ using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Saves;
 using MegaCrit.Sts2.Core.Localization;
+using KKSavePoint.src.Features;
 
 
 namespace KKSavePoint.Features;
 
 
 
-public static partial class SavePointFeature
+public partial class SavePointFeature
 
 {
 
@@ -353,9 +354,44 @@ public static partial class SavePointFeature
             return Task.FromResult<IEnumerable<CardModel>>(Enumerable.Empty<CardModel>());
         }
 
-        public CardModel? GetSelectedCardReward(IReadOnlyList<MegaCrit.Sts2.Core.Entities.Cards.CardCreationResult> options, IReadOnlyList<MegaCrit.Sts2.Core.Entities.CardRewardAlternatives.CardRewardAlternative> alternatives)
+        public MegaCrit.Sts2.Core.TestSupport.CardRewardSelection GetSelectedCardReward(IReadOnlyList<MegaCrit.Sts2.Core.Entities.Cards.CardCreationResult> options, IReadOnlyList<MegaCrit.Sts2.Core.Entities.CardRewardAlternatives.CardRewardAlternative> alternatives)
         {
-            return null;
+            Log.Info($"[KKSavePoint] ReplayCardSelector.GetSelectedCardReward called with {options.Count} options");
+            
+            if (options.Count > 0)
+            {
+                var selectedCard = options[0].Card;
+                Log.Info($"[KKSavePoint] Selected first card reward: {selectedCard?.Id?.Entry}");
+                
+                // 使用反射创建 CardRewardSelection 对象
+                var cardRewardSelectionType = typeof(MegaCrit.Sts2.Core.TestSupport.CardRewardSelection);
+                
+                // 尝试使用默认构造函数
+                try
+                {
+                    var instance = Activator.CreateInstance(cardRewardSelectionType);
+                    if (instance != null)
+                    {
+                        // 尝试设置属性
+                        var selectedCardProperty = cardRewardSelectionType.GetProperty("SelectedCard");
+                        var selectedAlternativeProperty = cardRewardSelectionType.GetProperty("SelectedAlternative");
+                        
+                        if (selectedCardProperty != null && selectedCardProperty.CanWrite)
+                        {
+                            selectedCardProperty.SetValue(instance, options[0]);
+                        }
+                        
+                        return (MegaCrit.Sts2.Core.TestSupport.CardRewardSelection)instance;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warn($"[KKSavePoint] Failed to create CardRewardSelection: {ex.Message}");
+                }
+            }
+            
+            // 返回默认值
+            return default;
         }
     }
 
@@ -417,7 +453,6 @@ public static partial class SavePointFeature
         _initialized = true;
 
 
-
         try
         {
 
@@ -436,6 +471,9 @@ public static partial class SavePointFeature
             }
 
             LoadFromFile();
+
+            // 初始化多人回滚系统
+            InitializeMultiplayerRollback();
 
             Log.Info($"[KKSavePoint] SavePoint initialized. File: {_saveFilePath}, Dir: {_savePointsDir}");
 
@@ -653,19 +691,15 @@ public static partial class SavePointFeature
 
 
 
-    private static void OnSavePointButtonPressed(Button sourceButton)
-
+    private static async void OnSavePointButtonPressed(Button sourceButton)
     {
-
         Log.Info("[KKSavePoint] SavePoint button pressed.");
-
-        ShowSavePointDialog(sourceButton);
-
+        await ShowSavePointDialog(sourceButton);
     }
 
 
 
-    private static void ShowSavePointDialog(Button? sourceButton = null)
+    private static async Task ShowSavePointDialog(Button? sourceButton = null)
 
     {
 
@@ -720,7 +754,7 @@ public static partial class SavePointFeature
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
-        dropTarget.SetDropCallback(files =>
+        dropTarget.SetDropCallback(async files =>
         {
             int totalImported = 0;
             foreach (var file in files)
@@ -731,7 +765,7 @@ public static partial class SavePointFeature
             {
                 window.Hide();
                 window.QueueFree();
-                ShowSavePointDialog();
+                await ShowSavePointDialog();
             }
         });
 
@@ -751,8 +785,6 @@ public static partial class SavePointFeature
             SizeFlagsVertical = Control.SizeFlags.ExpandFill
         };
 
-
-
         var listContainer = new VBoxContainer
 
         {
@@ -763,26 +795,41 @@ public static partial class SavePointFeature
 
         listContainer.AddThemeConstantOverride("separation", 4);
 
+        // Build full UI structure first
+        dropTarget.AddChild(content);
+        window.AddChild(dropTarget);
 
+        // Show window immediately
+        gameRoot.AddChild(window);
+        window.PopupCentered();
+
+        // Add scroll container first
+        scrollContainer.AddChild(listContainer);
+        content.AddChild(scrollContainer);
+
+        // Add loading label at bottom so it doesn't block content
+        var loadingLabel = new Label
+        {
+            Text = IsChineseLocale() ? "正在加载存档..." : "Loading save points...",
+            CustomMinimumSize = new Vector2(0f, 30f),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        content.AddChild(loadingLabel);
 
         // Check if current game is multiplayer
         var currentRunState = RunManager.Instance.DebugOnlyGetState();
         bool isCurrentMultiplayer = currentRunState != null && currentRunState.Players.Count > 1;
 
         int count;
+        var recordsToShow = new List<(SavePointRecord record, int originalIndex)>();
 
         lock (_lock)
-
         {
-
             count = _savePoints.Count;
 
-            int displayedCount = 0;
-
             if (count == 0)
-
             {
-
                 var noDataLabel = new Label
                 {
                     Text = L10n.NoSavePoints,
@@ -790,17 +837,12 @@ public static partial class SavePointFeature
                     HorizontalAlignment = HorizontalAlignment.Center
                 };
                 listContainer.AddChild(noDataLabel);
-
             }
-
             else
-
             {
-
+                // Collect records first inside lock
                 for (int i = count - 1; i >= 0; i--)
-
                 {
-
                     var record = _savePoints[i];
 
                     // Filter saves based on current mode
@@ -809,149 +851,160 @@ public static partial class SavePointFeature
                         continue;
                     }
 
-                    displayedCount++;
-
-                    var row = new HBoxContainer
-
-                    {
-
-                        CustomMinimumSize = new Vector2(0f, 36f),
-
-                        SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-
-                    };
-
-                    row.AddThemeConstantOverride("separation", 4);
-
-
-
-                    var hashText = string.IsNullOrEmpty(record.Hash) ? "-------" : record.Hash;
-                    var charText = string.IsNullOrEmpty(record.CharacterName) ? "?" : record.CharacterName;
-                    var diffText = string.IsNullOrEmpty(record.Difficulty) ? "?" : record.Difficulty;
-                    var multiplayerIndicator = record.IsMultiplayer ? "[MP] " : "";
-
-                    string buttonText;
-                    string tooltipText;
-
-                    if (record.IsTurnSavePoint)
-                    {
-                        string suffix = string.Format(L10n.TurnSavePointSuffix, record.Floor);
-                        buttonText = $"[{record.Index}][{hashText}][{charText}][{diffText}] {L10n.TurnSavePointPrefix}{record.TurnNumber}{suffix} | HP {record.CurrentHp}/{record.MaxHp} | Gold {record.Gold} | {record.Timestamp:HH:mm:ss}";
-                        tooltipText = $"{L10n.TooltipClickToLoad}.\n{L10n.TooltipCharacter}: {record.CharacterName}\n{L10n.TooltipDifficulty}: {record.Difficulty}\n{L10n.TooltipSavedAt} {record.Timestamp:yyyy-MM-dd HH:mm:ss}\nMode: {(record.IsMultiplayer ? $"Multiplayer ({record.PlayerCount} players)" : "Single Player")}\nTurn: {record.TurnNumber}";
-                    }
-                    else
-                    {
-                        buttonText = $"[{record.Index}][{hashText}][{charText}][{diffText}][F{record.Floor}] {(record.IsMultiplayer ? $"[MP{record.PlayerCount}] " : "")}{record.RoomName} | HP {record.CurrentHp}/{record.MaxHp} | Gold {record.Gold} | {record.Timestamp:HH:mm:ss}";
-                        tooltipText = $"{L10n.TooltipClickToLoad}.\n{L10n.TooltipCharacter}: {record.CharacterName}\n{L10n.TooltipDifficulty}: {record.Difficulty}\n{L10n.TooltipSavedAt} {record.Timestamp:yyyy-MM-dd HH:mm:ss}\nMode: {(record.IsMultiplayer ? $"Multiplayer ({record.PlayerCount} players)" : "Single Player")}";
-                    }
-
-                    var itemButton = new Button
-                    {
-                        Text = buttonText,
-                        SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-                        TooltipText = tooltipText
-                    };
-                    // 增大字体大小
-                    itemButton.AddThemeFontSizeOverride("font_size", 16);
-
-                    if (record.IsTurnSavePoint)
-                    {
-                        itemButton.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.2f));
-                    }
-
-                    int capturedIndex = i;
-
-                    itemButton.Pressed += () =>
-                    {
-                        window.Hide();
-                        window.QueueFree();
-                        LoadSavePoint(capturedIndex);
-                    };
-
-                    row.AddChild(itemButton);
-
-                    var copyButton = new Button
-                    {
-                        Text = L10n.Copy,
-                        CustomMinimumSize = new Vector2(50f, 36f),
-                        TooltipText = L10n.TooltipCopyToClipboard
-                    };
-                    copyButton.Pressed += () =>
-                    {
-                        Log.Info($"[KKSavePoint] Copy button pressed for index {capturedIndex}");
-                        ExportSingleToClipboard(capturedIndex);
-                        ShowFeedback(L10n.FeedbackCopied);
-                    };
-
-                    row.AddChild(copyButton);
-
-                    var exportFileButton = new Button
-                    {
-                        Text = L10n.Export,
-                        CustomMinimumSize = new Vector2(60f, 36f),
-                        TooltipText = L10n.TooltipExportToFile
-                    };
-                    exportFileButton.Pressed += () =>
-                    {
-                        ExportSingleToFile(capturedIndex);
-                    };
-
-                    row.AddChild(exportFileButton);
-
-                    var deleteButton = new Button
-                    {
-                        Text = L10n.Delete,
-                        CustomMinimumSize = new Vector2(55f, 36f),
-                        TooltipText = L10n.TooltipDelete
-                    };
-                    deleteButton.Pressed += () =>
-                    {
-                        DeleteSavePoint(capturedIndex);
-                        window.Hide();
-                        window.QueueFree();
-                        ShowSavePointDialog();
-                    };
-
-                    row.AddChild(deleteButton);
-
-                    var viewDeckButton = new Button
-                    {
-                        Text = L10n.ViewDeck,
-                        CustomMinimumSize = new Vector2(80f, 36f),
-                        TooltipText = L10n.TooltipViewDeck
-                    };
-                    viewDeckButton.Pressed += () =>
-                    {
-                        ShowDeckDialog(capturedIndex);
-                    };
-
-                    row.AddChild(viewDeckButton);
-
-                    listContainer.AddChild(row);
-
+                    recordsToShow.Add((record, i));
                 }
-
-                // If no saves match current mode
-                if (displayedCount == 0)
-                {
-                    var noDataLabel = new Label
-                    {
-                        Text = isCurrentMultiplayer ? (IsChineseLocale() ? "暂无联机存档点。" : "No multiplayer save points recorded yet.") : L10n.NoSavePoints,
-                        CustomMinimumSize = new Vector2(0f, 60f),
-                        HorizontalAlignment = HorizontalAlignment.Center
-                    };
-                    listContainer.AddChild(noDataLabel);
-                }
-
             }
-
         }
 
+        // Now create UI outside lock
+        if (recordsToShow.Count > 0)
+        {
+            for (int i = 0; i < recordsToShow.Count; i++)
+            {
+                var (record, originalIndex) = recordsToShow[i];
 
+                // Update loading progress every 50 items
+                if (i % 50 == 0)
+                {
+                    loadingLabel.Text = IsChineseLocale() 
+                        ? $"正在加载存档... {i + 1}/{recordsToShow.Count}" 
+                        : $"Loading save points... {i + 1}/{recordsToShow.Count}";
+                }
 
-        scrollContainer.AddChild(listContainer);
+                var row = new HBoxContainer
+                {
+                    CustomMinimumSize = new Vector2(0f, 36f),
+                    SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+                };
 
-        content.AddChild(scrollContainer);
+                row.AddThemeConstantOverride("separation", 4);
+
+                var hashText = string.IsNullOrEmpty(record.Hash) ? "-------" : record.Hash;
+                var charText = string.IsNullOrEmpty(record.CharacterName) ? "?" : record.CharacterName;
+                var diffText = string.IsNullOrEmpty(record.Difficulty) ? "?" : record.Difficulty;
+                var multiplayerIndicator = record.IsMultiplayer ? "[MP] " : "";
+
+                string buttonText;
+                string tooltipText;
+
+                if (record.IsTurnSavePoint)
+                {
+                    string suffix = string.Format(L10n.TurnSavePointSuffix, record.Floor);
+                    buttonText = $"[{record.Index}][{hashText}][{charText}][{diffText}] {L10n.TurnSavePointPrefix}{record.TurnNumber}{suffix} | HP {record.CurrentHp}/{record.MaxHp} | Gold {record.Gold} | {record.Timestamp:HH:mm:ss}";
+                    tooltipText = $"{L10n.TooltipClickToLoad}.\n{L10n.TooltipCharacter}: {record.CharacterName}\n{L10n.TooltipDifficulty}: {record.Difficulty}\n{L10n.TooltipSavedAt} {record.Timestamp:yyyy-MM-dd HH:mm:ss}\nMode: {(record.IsMultiplayer ? $"Multiplayer ({record.PlayerCount} players)" : "Single Player")}\nTurn: {record.TurnNumber}";
+                }
+                else
+                {
+                    buttonText = $"[{record.Index}][{hashText}][{charText}][{diffText}][F{record.Floor}] {(record.IsMultiplayer ? $"[MP{record.PlayerCount}] " : "")}{record.RoomName} | HP {record.CurrentHp}/{record.MaxHp} | Gold {record.Gold} | {record.Timestamp:HH:mm:ss}";
+                    tooltipText = $"{L10n.TooltipClickToLoad}.\n{L10n.TooltipCharacter}: {record.CharacterName}\n{L10n.TooltipDifficulty}: {record.Difficulty}\n{L10n.TooltipSavedAt} {record.Timestamp:yyyy-MM-dd HH:mm:ss}\nMode: {(record.IsMultiplayer ? $"Multiplayer ({record.PlayerCount} players)" : "Single Player")}";
+                }
+
+                var itemButton = new Button
+                {
+                    Text = buttonText,
+                    SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+                    TooltipText = tooltipText
+                };
+                // 增大字体大小
+                itemButton.AddThemeFontSizeOverride("font_size", 16);
+
+                if (record.IsTurnSavePoint)
+                {
+                    itemButton.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.2f));
+                }
+
+                int capturedIndex = originalIndex;
+
+                itemButton.Pressed += async () =>
+                {
+                    window.Hide();
+                    window.QueueFree();
+                    await LoadSavePoint(capturedIndex);
+                };
+
+                row.AddChild(itemButton);
+
+                var copyButton = new Button
+                {
+                    Text = L10n.Copy,
+                    CustomMinimumSize = new Vector2(50f, 36f),
+                    TooltipText = L10n.TooltipCopyToClipboard
+                };
+                copyButton.Pressed += () =>
+                {
+                    Log.Info($"[KKSavePoint] Copy button pressed for index {capturedIndex}");
+                    ExportSingleToClipboard(capturedIndex);
+                    ShowFeedback(L10n.FeedbackCopied);
+                };
+
+                row.AddChild(copyButton);
+
+                var exportFileButton = new Button
+                {
+                    Text = L10n.Export,
+                    CustomMinimumSize = new Vector2(60f, 36f),
+                    TooltipText = L10n.TooltipExportToFile
+                };
+                exportFileButton.Pressed += () =>
+                {
+                    ExportSingleToFile(capturedIndex);
+                };
+
+                row.AddChild(exportFileButton);
+
+                var deleteButton = new Button
+                {
+                    Text = L10n.Delete,
+                    CustomMinimumSize = new Vector2(55f, 36f),
+                    TooltipText = L10n.TooltipDelete
+                };
+                deleteButton.Pressed += async () =>
+                {
+                    DeleteSavePoint(capturedIndex);
+                    window.Hide();
+                    window.QueueFree();
+                    await ShowSavePointDialog();
+                };
+
+                row.AddChild(deleteButton);
+
+                var viewDeckButton = new Button
+                {
+                    Text = L10n.ViewDeck,
+                    CustomMinimumSize = new Vector2(80f, 36f),
+                    TooltipText = L10n.TooltipViewDeck
+                };
+                viewDeckButton.Pressed += () =>
+                {
+                    ShowDeckDialog(capturedIndex);
+                };
+
+                row.AddChild(viewDeckButton);
+
+                listContainer.AddChild(row);
+
+                // Yield every 50 items to keep UI responsive but faster
+                if ((i + 1) % 50 == 0)
+                {
+                    await Task.Delay(1);
+                }
+            }
+        }
+        else if (count > 0)
+        {
+            // If no saves match current mode
+            var noDataLabel = new Label
+            {
+                Text = isCurrentMultiplayer ? (IsChineseLocale() ? "暂无联机存档点。" : "No multiplayer save points recorded yet.") : L10n.NoSavePoints,
+                CustomMinimumSize = new Vector2(0f, 60f),
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            listContainer.AddChild(noDataLabel);
+        }
+
+        // Remove loading label when done
+        content.RemoveChild(loadingLabel);
+        loadingLabel.QueueFree();
 
 
 
@@ -975,7 +1028,7 @@ public static partial class SavePointFeature
             CustomMinimumSize = new Vector2(150f, 40f),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter
         };
-        importButton.Pressed += () =>
+        importButton.Pressed += async () =>
         {
             Log.Info("[KKSavePoint] Import from clipboard button pressed");
             var imported = ImportFromClipboard();
@@ -985,7 +1038,7 @@ public static partial class SavePointFeature
                 ShowFeedback(L10n.FeedbackImported(imported));
                 window.Hide();
                 window.QueueFree();
-                ShowSavePointDialog();
+                await ShowSavePointDialog();
             }
             else
             {
@@ -1070,21 +1123,11 @@ public static partial class SavePointFeature
         };
         content.AddChild(_statusLabel);
 
-
-
-        dropTarget.AddChild(content);
-
-        window.AddChild(dropTarget);
-
         window.CloseRequested += () =>
         {
             window.Hide();
             window.QueueFree();
         };
-
-        gameRoot.AddChild(window);
-
-        window.PopupCentered();
 
         // 添加键盘事件处理ESC键关闭
         dropTarget._Window = window; // 传递window引用用于ESC键处理
@@ -1420,7 +1463,7 @@ public static partial class SavePointFeature
 
 
 
-    private static void LoadSavePoint(int index)
+    private static async Task LoadSavePoint(int index)
 
     {
 
@@ -1576,16 +1619,23 @@ public static partial class SavePointFeature
             {
                 Log.Info("[KKSavePoint] Multiplayer mode detected, preparing to return to menu and auto navigate...");
 
-                if (IsHost())
+                // 先立即检测角色，避免断开连接后NetService失效
+                bool isHostNow = IsHost();
+                bool isClientNow = IsClient();
+                Log.Info($"[KKSavePoint] Detected role immediately: Host={isHostNow}, Client={isClientNow}");
+
+                if (isHostNow)
                 {
                     Log.Info("[KKSavePoint] Host: Saving save data and sending rollback notification to clients...");
                     ShowFeedback("正在发送回档通知给客机...");
                     
-                    // 先发送回档消息通知所有客机
-                    SendRollbackMessage(gameSavePath);
+                    // 发送回档消息通知所有客机并等待确认
+                    bool allClientsAcked = RollbackMessageHandler.SendRollbackMessageWithAck(gameSavePath, 5000);
                     
-                    // 等待一小段时间确保客机收到消息
-                    System.Threading.Thread.Sleep(500);
+                    if (!allClientsAcked)
+                    {
+                        Log.Warn("[KKSavePoint] Not all clients acknowledged rollback request, proceeding anyway...");
+                    }
                     
                     Log.Info("[KKSavePoint] Host: Save data prepared and rollback notification sent, returning to menu...");
                     ShowFeedback("正在返回主菜单，准备重新加载房间...");
@@ -1594,12 +1644,49 @@ public static partial class SavePointFeature
                     _shouldJoin = false;
                     ScheduleAutoNavigateToMultiplayer();
                 }
-                else if (IsClient())
+                else if (isClientNow)
                 {
                     Log.Info("[KKSavePoint] Client: Returning to menu, will auto navigate to join...");
-                    ShowFeedback("正在返回主菜单，准备重新加入房间...");
+                    ShowFeedback("正在返回主菜单，准备重新加入房间2...");
                     _shouldHost = false;
                     _shouldJoin = true;
+                    
+                    // 在断开连接前保存主机信息
+                    try
+                    {
+                        var netService = GetCachedNetService();
+                        if (netService != null)
+                        {
+                            // 尝试获取主机的 steam ID
+                            var hostIdProperty = netService.GetType().GetProperty("HostId", BindingFlags.Public | BindingFlags.Instance);
+                            if (hostIdProperty != null)
+                            {
+                                var hostId = hostIdProperty.GetValue(netService);
+                                if (hostId is ulong ulongHostId)
+                                {
+                                    SavePointFeature._pendingHostSteamId = ulongHostId;
+                                    Log.Info($"[KKSavePoint] Saved host SteamId for client: {ulongHostId}");
+                                }
+                            }
+                            
+                            // 尝试获取 lobby ID
+                            var lobbyIdProperty = netService.GetType().GetProperty("LobbyId", BindingFlags.Public | BindingFlags.Instance);
+                            if (lobbyIdProperty != null)
+                            {
+                                var lobbyId = lobbyIdProperty.GetValue(netService);
+                                if (lobbyId is ulong ulongLobbyId)
+                                {
+                                    SavePointFeature._pendingHostLobbyId = ulongLobbyId;
+                                    Log.Info($"[KKSavePoint] Saved host LobbyId for client: {ulongLobbyId}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn($"[KKSavePoint] Failed to save host info for client: {ex.Message}");
+                    }
+                    
                     ScheduleAutoNavigateToMultiplayer();
                 }
                 else
@@ -1610,7 +1697,7 @@ public static partial class SavePointFeature
                     _shouldJoin = false;
                 }
 
-                DisconnectAndReturnToMainMenu();
+                await SavePointManager.DisconnectAndReturnToMainMenu();
                 
                 return;
             }
@@ -2920,12 +3007,12 @@ public static partial class SavePointFeature
                         turnButton.AddThemeColorOverride("font_color", new Color(1f, 0.8f, 0.2f));
 
                         int targetTurn = record.TurnNumber;
-                        turnButton.Pressed += () =>
+                        turnButton.Pressed += async () =>
                         {
                             Log.Info($"[KKSavePoint] Turn button pressed for turn {targetTurn}");
                             window.Hide();
                             window.QueueFree();
-                            LoadTurnRecord(targetTurn);
+                            await LoadTurnRecord(targetTurn);
                         };
 
                         row.AddChild(turnButton);
@@ -2939,12 +3026,12 @@ public static partial class SavePointFeature
                         rollbackButton.AddThemeFontSizeOverride("font_size", 16);
 
                         int rollbackTurn = record.TurnNumber;
-                        rollbackButton.Pressed += () =>
+                        rollbackButton.Pressed += async () =>
                         {
                             Log.Info($"[KKSavePoint] Rollback button pressed for turn {rollbackTurn}");
                             window.Hide();
                             window.QueueFree();
-                            LoadTurnRecord(rollbackTurn);
+                            await LoadTurnRecord(rollbackTurn);
                         };
 
                         row.AddChild(rollbackButton);
@@ -2982,7 +3069,7 @@ public static partial class SavePointFeature
         }
     }
 
-    private static void LoadTurnRecord(int turnNumber)
+    private static async Task LoadTurnRecord(int turnNumber)
     {//LoadSavePoint
         Log.Info($"[KKSavePoint] LoadTurnRecord called with turnNumber: {turnNumber}");
 
@@ -3116,9 +3203,9 @@ public static partial class SavePointFeature
 
             if (isMultiplayer)
             {
-                Log.Info("[KKSavePoint] Multiplayer rollback: disconnecting and returning to main menu...");
+                Log.Info("[KKSavePoint]  LoadTurnRecord_Multiplayer rollback: disconnecting and returning to main menu...");
                 ShowFeedback("正在断开连接并返回主菜单...");
-                DisconnectAndReturnToMainMenu();
+                await SavePointManager.DisconnectAndReturnToMainMenu();
             }
             else
             {
