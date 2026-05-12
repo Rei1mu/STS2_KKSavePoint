@@ -41,7 +41,7 @@ public partial class SavePointFeature
     private static System.Threading.Tasks.Task? _joinRetryTask = null;
     private static ulong? _pendingHostLobbyId = null;
     private static ulong? _pendingHostSteamId = null;
-    
+
     public static ulong? PendingHostLobbyId => _pendingHostLobbyId;
     public static ulong? PendingHostSteamId => _pendingHostSteamId;
     private static Action<ulong>? _rollbackAckCallback = null;
@@ -61,6 +61,7 @@ public partial class SavePointFeature
             DetectNetworkRole();
             RegisterInitialGameInfoMessageHandler();
             RegisterLobbySeedChangedMessageHandler();
+            // 不再拦截 SteamHost.Stop - 回滚时正常清理
             _multiplayerRollbackInitialized = true;
             Log.Info($"[KKSavePoint] Multiplayer rollback system initialized. Role: Host={_isHost}, Client={_isClient}");
         }
@@ -68,6 +69,65 @@ public partial class SavePointFeature
         {
             Log.Error($"[KKSavePoint] Failed to initialize multiplayer rollback: {ex}");
         }
+    }
+
+    private static bool _steamHostStopPatchRegistered = false;
+
+    private static void RegisterSteamHostStopPatch()
+    {
+        if (_steamHostStopPatchRegistered) return;
+
+        try
+        {
+            var steamHostType = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a =>
+                {
+                    try { return a.GetTypes(); }
+                    catch { return Array.Empty<Type>(); }
+                })
+                .FirstOrDefault(t => t.Name == "SteamHost" && t.Namespace?.Contains("Multiplayer") == true);
+
+            if (steamHostType != null)
+            {
+                Log.Info($"[KKSavePoint] Found SteamHost type: {steamHostType.FullName}");
+
+                var stopMethod = steamHostType.GetMethod("StopHost", BindingFlags.Public | BindingFlags.Instance);
+                if (stopMethod != null)
+                {
+                    Log.Info($"[KKSavePoint] Found SteamHost.StopHost method, creating patch...");
+
+                    var harmony = new Harmony("KKSavePoint.SteamHostStopPatch");
+                    harmony.Patch(stopMethod, prefix: new HarmonyMethod(typeof(SavePointFeature).GetMethod(nameof(SteamHostStopPrefix))));
+
+                    _steamHostStopPatchRegistered = true;
+                    Log.Info("[KKSavePoint] SteamHost.StopHost patch registered");
+                }
+                else
+                {
+                    Log.Warn("[KKSavePoint] SteamHost.StopHost method not found");
+                }
+            }
+            else
+            {
+                Log.Warn("[KKSavePoint] SteamHost type not found in loaded assemblies");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"[KKSavePoint] Failed to register SteamHost.StopHost patch: {ex.Message}");
+        }
+    }
+
+    private static bool SteamHostStopPrefix(object __instance)
+    {
+        RegisterSteamHostStopPatch();
+
+        if (_shouldHost || _shouldJoin)
+        {
+            Log.Info("[KKSavePoint] Blocking SteamHost.StopHost() because we are doing a rollback/reconnect");
+            return false;
+        }
+        return true;
     }
 
     /// <summary>
@@ -96,7 +156,7 @@ public partial class SavePointFeature
             {
                 netService = GetNetServiceFromRunManager();
             }
-            
+
             if (netService == null)
             {
                 Log.Warn("[KKSavePoint] Cannot register InitialGameInfoMessage handler: NetService is null");
@@ -144,7 +204,7 @@ public partial class SavePointFeature
             {
                 netService = GetNetServiceFromRunManager();
             }
-            
+
             if (netService == null)
             {
                 Log.Warn("[KKSavePoint] Cannot register LobbySeedChangedMessage handler: NetService is null");
@@ -153,12 +213,12 @@ public partial class SavePointFeature
 
             MessageHandlerDelegate<LobbySeedChangedMessage> handler = (message, senderId) =>
             {
-                Log.Info($"[KKSavePoint] Received LobbySeedChangedMessage. Seed: {message.seed}, SenderId: {senderId}");
+                Log.Info($"[KKSavePoint]_k5 Received LobbySeedChangedMessage. Seed: {message.seed}, SenderId: {senderId}");
 
                 // 检查是否是回滚消息
                 if (message.seed == "KK_SAVEPOINT_ROLLBACK_REQUEST")
                 {
-                    Log.Info("[KKSavePoint] Detected rollback request from host!");
+                    Log.Info("[KKSavePoint]_j1 Detected rollback request from host!");
                     _pendingRollbackFromHost = true;
 
                     // 保存 senderId (主机SteamId) 
@@ -177,6 +237,14 @@ public partial class SavePointFeature
                                 _pendingHostLobbyId = ulongLobbyId;
                                 Log.Info($"[KKSavePoint] Saved current LobbyId: {ulongLobbyId}");
                             }
+                            else
+                            {
+                                Log.Warn($"[KKSavePoint] LobbyId property value is not ulong: {lobbyId?.GetType().Name ?? "null"}");
+                            }
+                        }
+                        else
+                        {
+                            Log.Warn("[KKSavePoint] LobbyId property not found on NetService");
                         }
                     }
                     catch (Exception ex)
@@ -192,7 +260,7 @@ public partial class SavePointFeature
                 // 检查是否是确认消息
                 else if (message.seed == "KK_SAVEPOINT_ROLLBACK_ACK")
                 {
-                    Log.Info($"[KKSavePoint] Received rollback acknowledgment from {senderId}");
+                    Log.Info($"[KKSavePoint]_k5 Received rollback acknowledgment from {senderId}");
                     _rollbackAckCallback?.Invoke(senderId);
                 }
             };
@@ -420,10 +488,6 @@ public partial class SavePointFeature
             {
                 Log.Info("[KKSavePoint] Host received rollback request, broadcasting to clients");
                 SendRollbackMessage(savePath);
-                
-                // 启动 socket 服务器，让客户端可以查询新的 lobby ID
-                Log.Info("[KKSavePoint] Starting rollback socket server for client reconnection...");
-                RollbackSocketServer.Start();
             }
         }
         catch (Exception ex)
@@ -618,9 +682,9 @@ public partial class SavePointFeature
                 {
                     Log.Info("[KKSavePoint] Client detected, re-registering message handlers...");
                     // 先重新注册消息处理器
-                    ReRegisterMessageHandlers(netService);
-                    
-                    Log.Info("[KKSavePoint] Auto setting ready...");
+                    //ReRegisterMessageHandlers(netService);
+
+                    Log.Info("[KKSavePoint] Rollback mode: NetService persistence, auto setting ready...");
                     AutoReadyState.IsProcessing = true;
                     runLobby.SetReady(true);
                     AutoReadyState.IsProcessing = false;
@@ -642,7 +706,7 @@ public partial class SavePointFeature
         }
     }
 
-    [HarmonyPatch(typeof(NMultiplayerLoadGameScreen), nameof(NMultiplayerLoadGameScreen.PlayerConnected))]
+    [HarmonyPatch(typeof(NMultiplayerLoadGameScreen), nameof(NMultiplayerLoadGameScreen.PlayerConnected), new Type[] { typeof(ulong) })]
     public static class NMultiplayerLoadGameScreenPlayerConnectedPatch
     {
         private static readonly FieldInfo _runLobbyField;
@@ -650,9 +714,10 @@ public partial class SavePointFeature
         static NMultiplayerLoadGameScreenPlayerConnectedPatch()
         {
             _runLobbyField = typeof(NMultiplayerLoadGameScreen).GetField("_runLobby", BindingFlags.Instance | BindingFlags.NonPublic);
+            Log.Info($"[KKSavePoint] NMultiplayerLoadGameScreenPlayerConnectedPatch static cctor ran, _runLobbyField={(_runLobbyField != null ? "found" : "null")}");
         }
 
-        public static void Postfix(NMultiplayerLoadGameScreen __instance, ulong playerId)
+        public static void Prefix(NMultiplayerLoadGameScreen __instance, ulong playerId)
         {
             if (AutoReadyState.IsProcessing) return;
 
@@ -660,20 +725,61 @@ public partial class SavePointFeature
             {
                 if (!FeatureSettingsStore.Current.EnableSavePoint) return;
 
+                Log.Info($"[KKSavePoint] PlayerConnected Prefix called with playerId={playerId}");
+
                 var runLobby = _runLobbyField?.GetValue(__instance) as LoadRunLobby;
+                Log.Info($"[KKSavePoint] runLobby={(runLobby != null ? "not null" : "null")}");
                 if (runLobby == null) return;
 
                 var netService = runLobby.NetService;
+                Log.Info($"[KKSavePoint] netService={(netService != null ? "not null" : "null")}");
                 if (netService == null) return;
 
                 // 只有房主需要在玩家连接时检查
                 if (netService.Type != NetGameType.Host) return;
 
                 var netId = netService.NetId;
+                Log.Info($"[KKSavePoint] netId={netId}");
                 var isReady = runLobby.IsPlayerReady(netId);
+                Log.Info($"[KKSavePoint] isReady={isReady}");
                 if (isReady) return;
 
                 Log.Info($"[KKSavePoint] Player {playerId} connected, checking if host should auto ready...");
+
+                // 保存主机的 SteamId（用于发送给客机）
+                if (!_pendingHostSteamId.HasValue)
+                {
+                    _pendingHostSteamId = netId;
+                    Log.Info($"[KKSavePoint] Saved host SteamId: {netId}");
+                }
+
+                // 从 ConnectedPlayerIds 获取所有连接的玩家，排除主机自己的 ID
+                var connectedPlayerIds = runLobby.ConnectedPlayerIds;
+                Log.Info($"[KKSavePoint] connectedPlayerIds={(connectedPlayerIds != null ? "not null" : "null")}");
+                if (connectedPlayerIds == null)
+                {
+                    Log.Warn("[KKSavePoint] ConnectedPlayerIds is null, skipping lobby ID sending");
+                    return;
+                }
+                
+                var clientIds = connectedPlayerIds.Where(id => id != netId).ToList();
+
+                Log.Info($"[KKSavePoint] Connected players: {string.Join(", ", connectedPlayerIds)}, Client IDs (excluding host): {string.Join(", ", clientIds)}");
+
+                // 向所有客户端发送 LobbyId
+                foreach (var clientId in clientIds)
+                {
+                    Log.Info($"[KKSavePoint] Sending LobbyId to client: {clientId}");
+                    SendLobbyIdToClient(netService, clientId);
+                }
+
+                // 检查 runLobby.Run 是否为 null
+                Log.Info($"[KKSavePoint] runLobby.Run check: {(runLobby.Run != null ? "not null" : "null")}");
+                if (runLobby.Run == null)
+                {
+                    Log.Warn("[KKSavePoint] runLobby.Run is null, skipping TryAutoReadyAsHost");
+                    return;
+                }
 
                 TryAutoReadyAsHost(__instance, runLobby);
             }
@@ -683,11 +789,155 @@ public partial class SavePointFeature
                 Log.Error($"[KKSavePoint] Failed to handle player connected: {ex}");
             }
         }
+
+        private static void SendLobbyIdToClient(object netService, ulong playerId)
+        {
+            try
+            {
+                // 使用已保存的 LobbyId，如果没有则尝试从 NetService 获取
+                ulong lobbyId = 0;
+                ulong hostSteamId = 0;
+
+                // 优先级1: 使用已保存的 LobbyId
+                if (_pendingHostLobbyId.HasValue)
+                {
+                    lobbyId = _pendingHostLobbyId.Value;
+                    Log.Info($"[KKSavePoint] Using saved LobbyId: {lobbyId}");
+                }
+                // 优先级2: 尝试从 NetService 的 NetHost 获取 LobbyId 属性
+                else if (netService != null)
+                {
+                    try
+                    {
+                        // 先尝试获取 NetHost 属性
+                        var netHostProperty = netService.GetType().GetProperty("NetHost", BindingFlags.Public | BindingFlags.Instance);
+                        if (netHostProperty != null)
+                        {
+                            var netHost = netHostProperty.GetValue(netService);
+                            if (netHost != null)
+                            {
+                                // 尝试从 NetHost 获取 LobbyId 属性
+                                var lobbyIdProperty = netHost.GetType().GetProperty("LobbyId", BindingFlags.Public | BindingFlags.Instance);
+                                if (lobbyIdProperty != null)
+                                {
+                                    var lobbyIdValue = lobbyIdProperty.GetValue(netHost);
+                                    if (lobbyIdValue != null)
+                                    {
+                                        // 尝试获取 m_SteamID 字段（CSteamID 结构体）
+                                        var steamIdField = lobbyIdValue.GetType().GetField("m_SteamID", BindingFlags.Public | BindingFlags.Instance);
+                                        if (steamIdField != null)
+                                        {
+                                            var rawId = steamIdField.GetValue(lobbyIdValue);
+                                            if (rawId is ulong ulongLobbyId)
+                                            {
+                                                lobbyId = ulongLobbyId;
+                                                Log.Info($"[KKSavePoint] Got LobbyId from NetHost.LobbyId.m_SteamID: {lobbyId}");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 如果上面没成功，尝试 GetRawLobbyIdentifier()
+                        if (lobbyId == 0)
+                        {
+                            var getRawLobbyIdentifierMethod = netService.GetType().GetMethod("GetRawLobbyIdentifier", BindingFlags.Public | BindingFlags.Instance);
+                            if (getRawLobbyIdentifierMethod != null)
+                            {
+                                var result = getRawLobbyIdentifierMethod.Invoke(netService, null);
+                                if (result is string stringLobbyId && !string.IsNullOrEmpty(stringLobbyId))
+                                {
+                                    if (ulong.TryParse(stringLobbyId, out var parsedLobbyId))
+                                    {
+                                        lobbyId = parsedLobbyId;
+                                        Log.Info($"[KKSavePoint] Got LobbyId from GetRawLobbyIdentifier(): {lobbyId}");
+                                    }
+                                    else
+                                    {
+                                        Log.Warn($"[KKSavePoint] Failed to parse GetRawLobbyIdentifier() result: {stringLobbyId}");
+                                    }
+                                }
+                                else
+                                {
+                                    Log.Warn($"[KKSavePoint] GetRawLobbyIdentifier() returned null or empty");
+                                }
+                            }
+                            else
+                            {
+                                Log.Warn($"[KKSavePoint] GetRawLobbyIdentifier method not found on NetService");
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warn($"[KKSavePoint] Failed to get LobbyId: {ex.Message}");
+                    }
+                }
+                // 优先级3: 使用主机的 SteamId 作为后备
+                if (lobbyId == 0 && _pendingHostSteamId.HasValue)
+                {
+                    lobbyId = _pendingHostSteamId.Value;
+                    Log.Info($"[KKSavePoint] LobbyId not available, using host SteamId as fallback: {lobbyId}");
+                }
+
+                if (lobbyId == 0)
+                {
+                    Log.Warn("[KKSavePoint] Cannot send LobbyId: no valid LobbyId found");
+                    return;
+                }
+
+                hostSteamId = _pendingHostSteamId ?? lobbyId;
+                Log.Info("[KKSavePoint] Rollback mode: using NetService persistence, no Steam P2P needed");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[KKSavePoint] Failed to send LobbyId to client: {ex}");
+            }
+        }
     }
 
     private static class AutoReadyState
     {
         public static bool IsProcessing = false;
+    }
+
+    private static NMainMenu? GetMainMenuInstance()
+    {
+        try
+        {
+            // 尝试从 NGame.Instance 获取当前场景中的 NMainMenu
+            if (NGame.Instance != null)
+            {
+                var currentScreenField = NGame.Instance.GetType().GetField("_currentScreen", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (currentScreenField != null)
+                {
+                    var currentScreen = currentScreenField.GetValue(NGame.Instance);
+                    if (currentScreen is NMainMenu mainMenu)
+                    {
+                        return mainMenu;
+                    }
+                }
+
+                // 尝试查找场景中的 NMainMenu 节点
+                var findMethod = NGame.Instance.GetType().GetMethod("FindNode", new[] { typeof(string) });
+                if (findMethod != null)
+                {
+                    var result = findMethod.Invoke(NGame.Instance, new object[] { "MainMenu" });
+                    if (result is NMainMenu menu)
+                    {
+                        return menu;
+                    }
+                }
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[KKSavePoint] Failed to get MainMenu instance: {ex}");
+            return null;
+        }
     }
 
     private static void TryAutoReadyAsHost(NMultiplayerLoadGameScreen __instance, LoadRunLobby runLobby)
@@ -717,94 +967,38 @@ public partial class SavePointFeature
         Log.Info($"[KKSavePoint] Host auto ready completed. GameMode: {runLobby.GameMode}");
     }
 
-    [HarmonyPatch(typeof(NMainMenu), nameof(NMainMenu._Ready))]
-    public static class NMainMenuReadyPatch
-    {
-        public static void Postfix(NMainMenu __instance)
-        {
-            Log.Info("[KKSavePoint] NMainMenu._Ready called, checking auto-navigation...");
-            Log.Info($"[KKSavePoint] Flags: _shouldHost={_shouldHost}, _shouldJoin={_shouldJoin}");
 
-            if (_shouldHost)
-            {
-                AutoEnterHostFromSaveOnGameStart(__instance);
-            }
-            else if (_shouldJoin)
-            {
-                AutoEnterJoinHostOnGameStart(__instance);
-            }
-            else
-            {
-                Log.Info("[KKSavePoint] No auto-navigation flags set, skipping");
-            }
-        }
-    }
 
     // 在设置自动导航标志后调用，NMainMenu._Ready 会自动触发自动导航
     public static void ScheduleAutoNavigateToMultiplayer()
     {
         // 不需要异步等待，依赖 NMainMenu._Ready 触发
-        Log.Info("[KKSavePoint] ScheduleAutoNavigateToMultiplayer called, will auto-navigate when NMainMenu._Ready");
+        Log.Info("[KKSavePoint]_k4 ScheduleAutoNavigateToMultiplayer called, will auto-navigate when NMainMenu._Ready");
     }
 
     // 进入游戏时自动进入 host from save（与重载返回区分开）
-    private static void AutoEnterHostFromSaveOnGameStart(NMainMenu __instance)
+    private static void AutoEnterHostFromSaveOnGameStart()
     {
         try
         {
-            Log.Info("[KKSavePoint] AutoEnterHostFromSaveOnGameStart started...");
-            Log.Info($"[KKSavePoint] Checking flags: _shouldHost={_shouldHost}");
-
+            Log.Info($"[KKSavePoint]_k8 AutoEnterHostFromSaveOnGameStart started...Checking flags: _shouldHost={_shouldHost}");
             // 只有 _shouldHost 为 true 时才执行
             if (!_shouldHost)
             {
-                Log.Info("[KKSavePoint] Not hosting, skipping auto navigation");
+                Log.Info("[KKSavePoint]_k8f Not hosting, skipping auto navigation");
                 return;
             }
-
             // 检查是否正在导航中，防止重复执行
             if (_navigatingFromMainMenu)
             {
-                Log.Warn("[KKSavePoint] Already navigating from main menu, skipping duplicate navigation");
+                Log.Warn("[KKSavePoint]_k8f Already navigating from main menu, skipping duplicate navigation");
                 return;
             }
             _navigatingFromMainMenu = true;
 
-            // 检查是否在主菜单界面
-            if (!(__instance is NMainMenu))
-            {
-                Log.Warn("[KKSavePoint] Not in NMainMenu, skipping multiplayer button click");
-                _navigatingFromMainMenu = false;
-                return;
-            }
-
-            Log.Info("[KKSavePoint] Auto clicking multiplayer button...");
-
-            var multiplayerButtonField = __instance.GetType().GetField("_multiplayerButton", BindingFlags.Instance | BindingFlags.NonPublic);
-            if (multiplayerButtonField != null)
-            {
-                var multiplayerButton = multiplayerButtonField.GetValue(__instance);
-                if (multiplayerButton != null)
-                {
-                    var emitSignalMethod = multiplayerButton.GetType().GetMethod("EmitSignal", new Type[] { typeof(StringName) });
-                    if (emitSignalMethod != null)
-                    {
-                        Log.Info("[KKSavePoint] Emitting Released signal on _multiplayerButton...");
-                        emitSignalMethod.Invoke(multiplayerButton, new object[] { NClickableControl.SignalName.Released });
-                        Log.Info("[KKSavePoint] Successfully emitted Released signal on _multiplayerButton!");
-                    }
-                    else
-                    {
-                        var forceClickMethod = multiplayerButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public);
-                        if (forceClickMethod != null)
-                        {
-                            Log.Info("[KKSavePoint] Calling ForceClick on _multiplayerButton...");
-                            forceClickMethod.Invoke(multiplayerButton, null);
-                            Log.Info("[KKSavePoint] Successfully clicked _multiplayerButton!");
-                        }
-                    }
-                }
-            }
+            // 调用新的直接 loadhost 方法（用户会实现这个方法）
+            Log.Info("[KKSavePoint]_k9 Calling DirectLoadHostFromSave...");
+            DirectLoadHostFromSave();
 
             _navigatingFromMainMenu = false;
         }
@@ -815,9 +1009,32 @@ public partial class SavePointFeature
         }
     }
 
+    // 直接加载主机游戏（不点击按钮）
+    private static void DirectLoadHostFromSave()
+    {
+        try
+        {
+            Log.Info("[KKSavePoint]_k10 DirectLoadHostFromSave called, attempting to start host...");
+
+            // 获取保存的存档数据
+            if (_pendingHostSaveData == null)
+            {
+                Log.Warn("[KKSavePoint]_k10f No pending host save data, skipping auto start...");
+                return;
+            }
+            Log.Info($"[KKSavePoint]_k11 Found pending host save data, Players: {_pendingHostSaveData.Players}");
+            Log.Info($"[KKSavePoint]_k11 Found pending host save data, Players: {_pendingHostSaveData.Players?.Count ?? 0}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[KKSavePoint]_k11f Error in DirectLoadHostFromSave: {ex}");
+        }
+    }
+
     // 进入游戏时自动加入房间（与重载返回区分开）
     private static void AutoEnterJoinHostOnGameStart(NMainMenu __instance)
     {
+
         try
         {
             Log.Info("[KKSavePoint] AutoEnterJoinHostOnGameStart started...");
@@ -907,51 +1124,14 @@ public partial class SavePointFeature
             return;
         }
 
-        // 都失败了，尝试通过 socket 查询主机的新 lobby ID
-        Log.Info("[KKSavePoint] JoinToHostWithFallbackAsync: Both Steam attempts failed, trying socket query...");
-        await TrySocketQueryAndJoin(mainMenu);
+        Log.Warn("[KKSavePoint] JoinToHostWithFallbackAsync: Both Steam attempts failed, rollback mode: NetService persistence");
     }
-
-    private static async Task TrySocketQueryAndJoin(NMainMenu mainMenu)
-    {
-        try
-        {
-            // 尝试连接到主机查询新的 lobby ID
-            var response = await RollbackSocketClient.ConnectToLocalHostAsync();
-            
-            if (response.Success)
-            {
-                Log.Info($"[KKSavePoint] Socket query successful! LobbyId: {response.LobbyId}, SteamId: {response.SteamId}");
-                
-                // 更新保存的 lobby ID 和 Steam ID
-                if (!string.IsNullOrEmpty(response.LobbyId) && ulong.TryParse(response.LobbyId, out var newLobbyId))
-                {
-                    _pendingHostLobbyId = newLobbyId;
-                    Log.Info($"[KKSavePoint] Updated pending lobby ID to: {newLobbyId}");
-                    await JoinToHostAsync(newLobbyId, isLobbyId: true, mainMenu);
-                    return;
-                }
-                
-                if (!string.IsNullOrEmpty(response.SteamId) && ulong.TryParse(response.SteamId, out var newSteamId))
-                {
-                    _pendingHostSteamId = newSteamId;
-                    Log.Info($"[KKSavePoint] Updated pending Steam ID to: {newSteamId}");
-                    await JoinToHostAsync(newSteamId, isLobbyId: false, mainMenu);
-                    return;
-                }
-            }
-            else
-            {
-                Log.Warn($"[KKSavePoint] Socket query failed: {response.Message}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error($"[KKSavePoint] Error in socket query: {ex}");
-        }
-        
-        Log.Warn("[KKSavePoint] Socket query also failed, giving up auto-rejoin");
-    }
+    //源码中的 OnSteamLobbyJoinRequested 方法
+    // private void OnSteamLobbyJoinRequested(GameLobbyJoinRequested_t lobbyJoinRequest)
+    // {
+    // 	Log.Info($"Joining to host via Steam invite. Lobby: {lobbyJoinRequest.m_steamIDLobby.m_SteamID} player: {lobbyJoinRequest.m_steamIDFriend.m_SteamID}");
+    // 	TaskHelper.RunSafely(JoinToHost(lobbyJoinRequest.m_steamIDLobby.m_SteamID, lobbyJoinRequest.m_steamIDFriend.m_SteamID));
+    // }
 
     // 使用与 SteamJoinCallbackHandler 相同的逻辑来连接主机
     private static async Task<bool> JoinToHostAsync(ulong id, bool isLobbyId, NMainMenu mainMenu)
@@ -960,43 +1140,20 @@ public partial class SavePointFeature
         {
             Log.Info($"[KKSavePoint] JoinToHostAsync started for {(isLobbyId ? "lobby" : "player")}: {id}");
 
-            // 清除所有子菜单
-            while (mainMenu.SubmenuStack.Peek() != null)
-            {
-                mainMenu.SubmenuStack.Pop();
-            }
+            // 清除所有子菜单 可能是多余的
+            // while (mainMenu.SubmenuStack.Peek() != null)
+            // {
+            //     mainMenu.SubmenuStack.Pop();
+            // }
 
-            // 直接使用类型，不需要反射查找
-            IClientConnectionInitializer connInitializer;
-            if (isLobbyId)
-            {
-                connInitializer = SteamClientConnectionInitializer.FromLobby(id);
-            }
-            else
-            {
-                connInitializer = SteamClientConnectionInitializer.FromPlayer(id);
-            }
+            // 调用 JoinToHost 方法（与源码中的 OnSteamLobbyJoinRequested 逻辑相同）
+            Log.Info($"[KKSavePoint] Joining to host via Steam invite. Lobby: {id}");
 
-            if (connInitializer == null)
-            {
-                Log.Error("[KKSavePoint] Failed to create SteamClientConnectionInitializer");
-                return false;
-            }
+            // 获取客户端自己的 Steam ID
+            ulong clientSteamId = GetClientSteamId();
+            Log.Info($"[KKSavePoint] Client Steam ID: {clientSteamId}");
 
-            // 调用 NMainMenu.JoinGame
-            Log.Info("[KKSavePoint] Calling NMainMenu.JoinGame...");
-            var joinGameMethod = typeof(NMainMenu).GetMethod("JoinGame", BindingFlags.Public | BindingFlags.Instance);
-            if (joinGameMethod == null)
-            {
-                Log.Error("[KKSavePoint] NMainMenu.JoinGame method not found");
-                return false;
-            }
-
-            var joinTask = joinGameMethod.Invoke(mainMenu, new object[] { connInitializer }) as Task;
-            if (joinTask != null)
-            {
-                await joinTask;
-            }
+            await JoinToHost(id, clientSteamId);
 
             Log.Info($"[KKSavePoint] JoinToHostAsync completed for {(isLobbyId ? "lobby" : "player")}: {id}");
             return true;
@@ -1005,6 +1162,110 @@ public partial class SavePointFeature
         {
             Log.Error($"[KKSavePoint] Error in JoinToHostAsync: {ex}");
             return false;
+        }
+    }
+
+    // 调用游戏的 JoinToHost 方法
+    private static async Task JoinToHost(ulong lobbyId, ulong playerId)
+    {
+        try
+        {
+            // 获取 SteamJoinCallbackHandler 类型
+            var steamJoinHandlerType = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a =>
+                {
+                    try { return a.GetTypes(); }
+                    catch { return Array.Empty<Type>(); }
+                })
+                .FirstOrDefault(t => t.Name == "SteamJoinCallbackHandler" && t.Namespace?.Contains("Multiplayer") == true);
+
+            if (steamJoinHandlerType == null)
+            {
+                Log.Warn("[KKSavePoint] SteamJoinCallbackHandler type not found");
+                return;
+            }
+
+            // 获取 JoinToHost 方法
+            var joinToHostMethod = steamJoinHandlerType.GetMethod("JoinToHost", BindingFlags.Public | BindingFlags.Instance, null, new Type[] { typeof(ulong), typeof(ulong) }, null);
+            if (joinToHostMethod == null)
+            {
+                Log.Warn("[KKSavePoint] JoinToHost method not found on SteamJoinCallbackHandler");
+                return;
+            }
+
+            // 获取实例
+            var instanceProp = steamJoinHandlerType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
+            if (instanceProp == null)
+            {
+                Log.Warn("[KKSavePoint] Instance property not found on SteamJoinCallbackHandler");
+                return;
+            }
+
+            var instance = instanceProp.GetValue(null);
+            if (instance == null)
+            {
+                Log.Warn("[KKSavePoint] SteamJoinCallbackHandler.Instance is null");
+                return;
+            }
+
+            // 调用方法
+            var task = joinToHostMethod.Invoke(instance, new object[] { lobbyId, playerId }) as Task;
+            if (task != null)
+            {
+                await task;
+            }
+
+            Log.Info("[KKSavePoint] Successfully called JoinToHost");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[KKSavePoint] Error calling JoinToHost: {ex}");
+        }
+    }
+
+    // 获取客户端自己的 Steam ID
+    private static ulong GetClientSteamId()
+    {
+        try
+        {
+            // 尝试通过 Steamworks API 获取当前用户的 Steam ID
+            var steamUserType = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a =>
+                {
+                    try { return a.GetTypes(); }
+                    catch { return Array.Empty<Type>(); }
+                })
+                .FirstOrDefault(t => t.Name == "SteamUser" && t.Namespace?.Contains("Steamworks") == true);
+
+            if (steamUserType != null)
+            {
+                var getSteamIDMethod = steamUserType.GetMethod("GetSteamID", BindingFlags.Public | BindingFlags.Static);
+                if (getSteamIDMethod != null)
+                {
+                    var steamIdResult = getSteamIDMethod.Invoke(null, null);
+                    if (steamIdResult != null)
+                    {
+                        // 获取 m_SteamID 属性
+                        var steamIdField = steamIdResult.GetType().GetField("m_SteamID");
+                        if (steamIdField != null)
+                        {
+                            var steamIdValue = steamIdField.GetValue(steamIdResult);
+                            if (steamIdValue is ulong id)
+                            {
+                                return id;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Log.Warn("[KKSavePoint] Failed to get client Steam ID via reflection, returning 0");
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[KKSavePoint] Error getting client Steam ID: {ex}");
+            return 0;
         }
     }
 
@@ -1051,10 +1312,58 @@ public partial class SavePointFeature
 
                     if (IsClient())
                     {
-                        //Log.Info("[KKSavePoint] Client received rollback request, returning to main menu...");
-                        //_pendingRollbackFromHost = true;
-                        //_shouldJoin = true;
+                        Log.Info("[KKSavePoint] Client received rollback request, setting flags and returning to main menu...");
+                        _pendingRollbackFromHost = true;
+                        _shouldJoin = true;
 
+                        // 发送确认消息给主机
+                        Log.Info("[KKSavePoint] Sending rollback acknowledgment to host...");
+                        try
+                        {
+                            var netService = GetCachedNetService();
+                            if (netService != null)
+                            {
+                                var messageAck = new LobbySeedChangedMessage
+                                {
+                                    seed = "KK_SAVEPOINT_ROLLBACK_ACK"
+                                };
+
+                                var methods = netService.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance);
+                                System.Reflection.MethodInfo? sendMessageMethod = null;
+                                foreach (var method in methods)
+                                {
+                                    if (method.Name == "SendMessage" && method.IsGenericMethodDefinition)
+                                    {
+                                        var parameters = method.GetParameters();
+                                        if (parameters.Length == 2)
+                                        {
+                                            sendMessageMethod = method.MakeGenericMethod(typeof(LobbySeedChangedMessage));
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (sendMessageMethod != null)
+                                {
+                                    sendMessageMethod.Invoke(netService, new object[] { messageAck, 0 }); // 0 = host
+                                    Log.Info("[KKSavePoint] Rollback acknowledgment sent!");
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warn($"[KKSavePoint] Failed to send rollback ack: {ex.Message}");
+                        }
+                    }
+                }
+                else if (message.seed == "KK_SAVEPOINT_ROLLBACK_ACK")
+                {
+                    Log.Info($"[KKSavePoint] Received rollback acknowledgment from client in StartRunLobbySeedChangedPatch!");
+                    // 主机接收确认消息
+                    if (IsHost())
+                    {
+                        Log.Info($"[KKSavePoint] Host received rollback ack, invoking callback...");
+                        _rollbackAckCallback?.Invoke(0); // 暂时用 0，实际上应该是 senderId
                     }
                 }
             }
@@ -1288,7 +1597,7 @@ public partial class SavePointFeature
                                                 Log.Warn("[KKSavePoint] Neither ForceClick nor NClickableControl found!");
                                             }
                                         }
-                                        
+
                                         // 停止并清理 Timer
                                         if (GodotObject.IsInstanceValid(timer))
                                         {

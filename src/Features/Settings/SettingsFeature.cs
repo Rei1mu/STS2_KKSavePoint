@@ -20,7 +20,7 @@ public static class NMainMenuReadySettingsPatch
     {
         try
         {
-            Log.Info("[KKSavePoint] NMainMenu._Ready postfix running.");
+            Log.Info("[KKSavePoint]_k7 NMainMenu._Ready postfix running.");
             SettingsFeature.AttachToMainMenu(__instance);
         }
         catch (Exception ex)

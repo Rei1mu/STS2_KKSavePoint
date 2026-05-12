@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 namespace KKSavePoint.src.Features;
 public class SavePointManager
 {
-    public static async Task DisconnectAndReturnToMainMenu()
+    public static void DisconnectAndReturnToMainMenu()
     {
         // try
         // {
@@ -104,20 +104,17 @@ public class SavePointManager
         //     Log.Warn($"[KKSavePoint] Failed to disconnect: {ex.Message}");
         // }
 
-        await Task.Delay(200);
 
-        await CloseToMenu();
+        CloseToMenu();
     }
 
-    public static async Task CloseToMenu()
+    public static void CloseToMenu()
     {
         try
         {
-            Log.Info("[KKSavePoint] CloseToMenu: Preparing to return to main menu...");
-
-            Log.Info("[KKSavePoint] CloseToMenu: Calling NGame.Instance.ReturnToMainMenu()...");
-            await NGame.Instance.ReturnToMainMenu();
-            Log.Info("[KKSavePoint] CloseToMenu: Successfully called ReturnToMainMenu");
+            Log.Info("[KKSavePoint]_k6 CloseToMenu: Calling NGame.Instance.ReturnToMainMenu()...");
+            NGame.Instance.ReturnToMainMenu();
+            Log.Info("[KKSavePoint]_k6 CloseToMenu: Successfully called ReturnToMainMenu");
         }
         catch (Exception ex)
         {
@@ -129,37 +126,37 @@ public class SavePointManager
     {
         try
         {
-            Log.Info("[KKSavePoint] Returning to main menu...");
+            Log.Info("[KKSavePoint]_k6r2 Returning to main menu...");
 
             if (NGame.Instance == null)
             {
-                Log.Error("[KKSavePoint] NGame.Instance is null");
+                Log.Error("[KKSavePoint]_k6r2 NGame.Instance is null");
                 return;
             }
 
             var returnToMenuMethod = NGame.Instance.GetType().GetMethod("ReturnToMainMenu");
             if (returnToMenuMethod != null)
             {
-                Log.Info("[KKSavePoint] Found ReturnToMainMenu method");
+                Log.Info("[KKSavePoint]_k6r2 Found ReturnToMainMenu method");
 
                 if (returnToMenuMethod.IsPublic && returnToMenuMethod.ReturnType == typeof(Task))
                 {
                     _ = (Task)returnToMenuMethod.Invoke(NGame.Instance, null);
-                    Log.Info("[KKSavePoint] Successfully called ReturnToMainMenu");
+                    Log.Info("[KKSavePoint]_k6r2 Successfully called ReturnToMainMenu");
                 }
                 else
                 {
-                    Log.Warn($"[KKSavePoint] ReturnToMainMenu method has wrong signature: IsPublic={returnToMenuMethod.IsPublic}, ReturnType={returnToMenuMethod.ReturnType}");
+                    Log.Warn($"[KKSavePoint]_k6r2 ReturnToMainMenu method has wrong signature: IsPublic={returnToMenuMethod.IsPublic}, ReturnType={returnToMenuMethod.ReturnType}");
                 }
             }
             else
             {
-                Log.Error("[KKSavePoint] ReturnToMainMenu method not found in NGame");
+                Log.Error("[KKSavePoint]_k6r2 ReturnToMainMenu method not found in NGame");
             }
         }
         catch (Exception ex)
         {
-            Log.Error($"[KKSavePoint] Failed to return to main menu: {ex}");
+            Log.Error($"[KKSavePoint]_k6r2 Failed to return to main menu: {ex}");
         }
     }
 }

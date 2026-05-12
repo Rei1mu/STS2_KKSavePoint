@@ -6,6 +6,7 @@ using KKSavePoint.Core;
 using MegaCrit.Sts2.Core.Logging;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using MegaCrit.Sts2.Core.Saves;
 
 namespace KKSavePoint.Features;
 
@@ -50,7 +51,9 @@ public partial class SavePointFeature
 
         public static void Postfix(object __instance)
         {
+
             if (!FeatureSettingsStore.Current.EnableSavePoint) return;
+
 
             try
             {
@@ -59,26 +62,69 @@ public partial class SavePointFeature
 
                 if (_shouldHost)
                 {
-                    // 添加延迟以等待菜单转换完成，避免 NLoadingOverlay disposed 错误
-                    Log.Info("[KKSavePoint] Scheduling delayed click on load button (waiting for menu transition)...");
 
-                    // 使用 Godot 定时器替代 Task.Run，避免跨线程问题
-                    var timer = new Godot.Timer();
-                    timer.WaitTime = 0.5f;
-                    timer.OneShot = true;
-                    timer.Timeout += () =>
+                    // 使用延迟来确保子菜单完全初始化
+                    Log.Info("[KKSavePoint] Scheduling delayed StartLoad call (waiting for menu transition)...");
+                    _ = Task.Delay(1000).ContinueWith(_ =>
                     {
-                        GD.Print("[KKSavePoint] Delay complete, now clicking load button...");
-                        ClickLoadButton(__instance);
-                        _shouldHost = false;  // 清除 host 标志
-                        timer.QueueFree();
-                    };
-                    NGame.Instance.AddChild(timer);
-                    timer.Start();
+                        try
+                        {
+                            // 查找 _loadButton 字段
+                            var loadButtonField = __instance.GetType().GetField("_loadButton", BindingFlags.Instance | BindingFlags.NonPublic);
+                            if (loadButtonField == null)
+                            {
+                                Log.Warn("[KKSavePoint]_k12f _loadButton field not found!");
+                                return;
+                            }
+                            
+                            var loadButton = loadButtonField.GetValue(__instance);
+                            if (loadButton == null)
+                            {
+                                Log.Warn("[KKSavePoint]_k12f _loadButton is null!");
+                                return;
+                            }
+                            
+                            // 查找 ForceClick 方法
+                            var forceClickMethod = loadButton.GetType().GetMethod("ForceClick", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                            if (forceClickMethod != null)
+                            {
+                                Log.Info("[KKSavePoint]_k12 Found ForceClick method on _loadButton, invoking...");
+                                forceClickMethod.Invoke(loadButton, null);
+                                Log.Info("[KKSavePoint]_k12 Successfully called ForceClick on _loadButton!");
+                            }
+                            else
+                            {
+                                Log.Warn("[KKSavePoint]_k12f ForceClick method not found on _loadButton!");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error($"[KKSavePoint]_k12f Error in delayed ForceClick call: {ex}");
+                        }
+                    });
+
+
+
+                    // // 添加延迟以等待菜单转换完成，避免 NLoadingOverlay disposed 错误
+                    // Log.Info("[KKSavePoint] Scheduling delayed click on load button (waiting for menu transition)...");
+
+                    // // 使用 Godot 定时器替代 Task.Run，避免跨线程问题
+                    // var timer = new Godot.Timer();
+                    // timer.WaitTime = 0.5f;
+                    // timer.OneShot = true;
+                    // timer.Timeout += () =>
+                    // {
+                    //     GD.Print("[KKSavePoint] Delay complete, now clicking load button...");
+                    //     ClickLoadButton(__instance);
+                    //     _shouldHost = false;  // 清除 host 标志
+                    //     timer.QueueFree();
+                    // };
+                    // NGame.Instance.AddChild(timer);
+                    // timer.Start();
                 }
                 else if (_shouldJoin)
                 {
-                    Log.Info("[KKSavePoint] Auto navigating to Join...");
+                    Log.Info("[KKSavePoint] Auto navigating to Join..."); return;
                     var joinButtonMethod = __instance.GetType().GetMethod("OnJoinFriendsPressed", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
                     if (joinButtonMethod != null)
                     {

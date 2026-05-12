@@ -169,7 +169,7 @@ public partial class SavePointFeature
             {
                 Log.Warn($"[KKSavePoint] Failed to get current profile ID, using default: {ex.Message}");
             }
-            
+
             string profileName = $"profile{currentProfileId}"; // 动态构建 profile 名称
 
             // 构建完整路径：把 user:// 替换成 User Data Directory，然后拼接 modded/{profileName}/saves/...
@@ -357,15 +357,15 @@ public partial class SavePointFeature
         public MegaCrit.Sts2.Core.TestSupport.CardRewardSelection GetSelectedCardReward(IReadOnlyList<MegaCrit.Sts2.Core.Entities.Cards.CardCreationResult> options, IReadOnlyList<MegaCrit.Sts2.Core.Entities.CardRewardAlternatives.CardRewardAlternative> alternatives)
         {
             Log.Info($"[KKSavePoint] ReplayCardSelector.GetSelectedCardReward called with {options.Count} options");
-            
+
             if (options.Count > 0)
             {
                 var selectedCard = options[0].Card;
                 Log.Info($"[KKSavePoint] Selected first card reward: {selectedCard?.Id?.Entry}");
-                
+
                 // 使用反射创建 CardRewardSelection 对象
                 var cardRewardSelectionType = typeof(MegaCrit.Sts2.Core.TestSupport.CardRewardSelection);
-                
+
                 // 尝试使用默认构造函数
                 try
                 {
@@ -375,12 +375,12 @@ public partial class SavePointFeature
                         // 尝试设置属性
                         var selectedCardProperty = cardRewardSelectionType.GetProperty("SelectedCard");
                         var selectedAlternativeProperty = cardRewardSelectionType.GetProperty("SelectedAlternative");
-                        
+
                         if (selectedCardProperty != null && selectedCardProperty.CanWrite)
                         {
                             selectedCardProperty.SetValue(instance, options[0]);
                         }
-                        
+
                         return (MegaCrit.Sts2.Core.TestSupport.CardRewardSelection)instance;
                     }
                 }
@@ -389,7 +389,7 @@ public partial class SavePointFeature
                     Log.Warn($"[KKSavePoint] Failed to create CardRewardSelection: {ex.Message}");
                 }
             }
-            
+
             // 返回默认值
             return default;
         }
@@ -866,8 +866,8 @@ public partial class SavePointFeature
                 // Update loading progress every 50 items
                 if (i % 50 == 0)
                 {
-                    loadingLabel.Text = IsChineseLocale() 
-                        ? $"正在加载存档... {i + 1}/{recordsToShow.Count}" 
+                    loadingLabel.Text = IsChineseLocale()
+                        ? $"正在加载存档... {i + 1}/{recordsToShow.Count}"
                         : $"Loading save points... {i + 1}/{recordsToShow.Count}";
                 }
 
@@ -1617,124 +1617,50 @@ public partial class SavePointFeature
 
             if (isMultiplayer)
             {
-                Log.Info("[KKSavePoint] Multiplayer mode detected, preparing to return to menu and auto navigate...");
-
-                // 先立即检测角色，避免断开连接后NetService失效
                 bool isHostNow = IsHost();
                 bool isClientNow = IsClient();
-                Log.Info($"[KKSavePoint] Detected role immediately: Host={isHostNow}, Client={isClientNow}");
+                Log.Info($"[KKSavePoint]_k1 Detected role immediately: Host={isHostNow}, Client={isClientNow}");
 
                 if (isHostNow)
                 {
-                    Log.Info("[KKSavePoint] Host: Saving save data and sending rollback notification to clients...");
-                    ShowFeedback("正在发送回档通知给客机...");
-                    
-                    // 发送回档消息通知所有客机并等待确认
-                    bool allClientsAcked = RollbackMessageHandler.SendRollbackMessageWithAck(gameSavePath, 5000);
-                    
-                    if (!allClientsAcked)
-                    {
-                        Log.Warn("[KKSavePoint] Not all clients acknowledged rollback request, proceeding anyway...");
-                    }
-                    
-                    Log.Info("[KKSavePoint] Host: Save data prepared and rollback notification sent, returning to menu...");
-                    ShowFeedback("正在返回主菜单，准备重新加载房间...");
                     _pendingHostSaveData = saveData.SaveData;
                     _shouldHost = true;
                     _shouldJoin = false;
-                    ScheduleAutoNavigateToMultiplayer();
-                }
-                else if (isClientNow)
-                {
-                    Log.Info("[KKSavePoint] Client: Returning to menu, will auto navigate to join...");
-                    ShowFeedback("正在返回主菜单，准备重新加入房间2...");
-                    _shouldHost = false;
-                    _shouldJoin = true;
-                    
-                    // 在断开连接前保存主机信息
-                    try
-                    {
-                        var netService = GetCachedNetService();
-                        if (netService != null)
-                        {
-                            // 尝试获取主机的 steam ID
-                            var hostIdProperty = netService.GetType().GetProperty("HostId", BindingFlags.Public | BindingFlags.Instance);
-                            if (hostIdProperty != null)
-                            {
-                                var hostId = hostIdProperty.GetValue(netService);
-                                if (hostId is ulong ulongHostId)
-                                {
-                                    SavePointFeature._pendingHostSteamId = ulongHostId;
-                                    Log.Info($"[KKSavePoint] Saved host SteamId for client: {ulongHostId}");
-                                }
-                            }
-                            
-                            // 尝试获取 lobby ID
-                            var lobbyIdProperty = netService.GetType().GetProperty("LobbyId", BindingFlags.Public | BindingFlags.Instance);
-                            if (lobbyIdProperty != null)
-                            {
-                                var lobbyId = lobbyIdProperty.GetValue(netService);
-                                if (lobbyId is ulong ulongLobbyId)
-                                {
-                                    SavePointFeature._pendingHostLobbyId = ulongLobbyId;
-                                    Log.Info($"[KKSavePoint] Saved host LobbyId for client: {ulongLobbyId}");
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warn($"[KKSavePoint] Failed to save host info for client: {ex.Message}");
-                    }
-                    
-                    ScheduleAutoNavigateToMultiplayer();
+                    OnClickMultiplayerSavePoint();
                 }
                 else
                 {
-                    Log.Info("[KKSavePoint] Multiplayer but role not detected, returning to menu...");
+                    Log.Info("[KKSavePoint]_k1 Multiplayer but role not detected, returning to menu...");
                     ShowFeedback("正在返回主菜单...");
                     _shouldHost = false;
                     _shouldJoin = false;
                 }
 
-                await SavePointManager.DisconnectAndReturnToMainMenu();
-                
-                return;
+
             }
 
             else
 
             {
                 RunManager.Instance.ActionQueueSet.Reset();
-
                 NRunMusicController.Instance?.StopMusic();
                 RunManager.Instance.CleanUp();
-
-
-
                 Log.Info("[KKSavePoint] Cleaned up, starting load now");
-
-
-
                 var runState = RunState.FromSerializable(saveData.SaveData);
-
-                RunManager.Instance.SetUpSavedSinglePlayer(runState, saveData.SaveData);
-
-
-
+                await RunManager.Instance.SetUpSavedSinglePlayer(runState, saveData.SaveData);
                 Log.Info($"[KKSavePoint] Continuing run with character: {saveData.SaveData.Players[0].CharacterId}");
 
                 SfxCmd.Play(runState.Players[0].Character.CharacterTransitionSfx);
 
                 NGame.Instance.ReactionContainer.InitializeNetworking(new NetSingleplayerGameService());
 
-                TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
+                await TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
 
             }
 
 
 
-            Log.Info($"[KKSavePoint] SavePoint loaded successfully: {record.RoomName}");
+            Log.Info($"[KKSavePoint]_k1END SavePoint loaded successfully: {record.RoomName}");
 
         }
 
@@ -2839,7 +2765,7 @@ public partial class SavePointFeature
 
     private static void ShowFeedback(string text)
     {
-        Log.Info($"[KKSavePoint] SavePoint feedback: {text}");
+        Log.Info($"[KKSavePoint] text feedback: {text}");
 
         try
         {
@@ -3205,7 +3131,7 @@ public partial class SavePointFeature
             {
                 Log.Info("[KKSavePoint]  LoadTurnRecord_Multiplayer rollback: disconnecting and returning to main menu...");
                 ShowFeedback("正在断开连接并返回主菜单...");
-                await SavePointManager.DisconnectAndReturnToMainMenu();
+                SavePointManager.DisconnectAndReturnToMainMenu();
             }
             else
             {
@@ -3216,13 +3142,13 @@ public partial class SavePointFeature
                 Log.Info("[KKSavePoint] Cleaned up, starting load now");
 
                 var runState = RunState.FromSerializable(saveData.SaveData);
-                RunManager.Instance.SetUpSavedSinglePlayer(runState, saveData.SaveData);
+                await RunManager.Instance.SetUpSavedSinglePlayer(runState, saveData.SaveData);
 
                 Log.Info($"[KKSavePoint] Continuing run with character: {saveData.SaveData.Players[0].CharacterId}");
 
                 SfxCmd.Play(runState.Players[0].Character.CharacterTransitionSfx);
                 NGame.Instance.ReactionContainer.InitializeNetworking(new NetSingleplayerGameService());
-                TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
+                await TaskHelper.RunSafely(NGame.Instance.LoadRun(runState, null));
 
                 // 设置回放队列，在 OnTurnStarted 中逐步执行回放
                 _targetReplayTurn = record.TurnNumber;
